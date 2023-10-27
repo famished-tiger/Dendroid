@@ -1,0 +1,8 @@
+Naming/MethodParameterName:
+  Enabled: false
+  
+Naming/VariableName:  
+  Enabled: false
+
+Style/CommentedKeyword:
+  Enabled: false
