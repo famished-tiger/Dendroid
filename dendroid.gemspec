@@ -2,7 +2,11 @@
 
 Gem::Specification.new do |s|
   s.name        = 'dendroid'
-  s.version     = '0.0.0'
+  s.version     = begin
+                    LIBPATH = ::File.expand_path( __FILE__) + ::File::SEPARATOR
+                    PATH = ::File.dirname(LIBPATH) + ::File::SEPARATOR
+                    ::File.read(PATH + 'version.txt').strip
+                  end
   s.summary     = 'Dendroid. TODO'
   s.description = 'WIP. A Ruby implementation of a Earley parser'
   s.authors     = ['Dimitri Geshef']
@@ -18,6 +22,6 @@ Gem::Specification.new do |s|
     'README.md',
     'version.txt'
   ]
-  s.homepage   = 'https://rubygems.org/gems/dendroid'
+  s.homepage   = 'https://github.com/famished-tiger/Dendroid'
   s.license    = 'MIT'
 end

@@ -20,15 +20,15 @@ module Dendroid
       end
 
       # Predicate method to check whether the symbol derives (matches)
-      # the empty string. As terminal symbol corresponds to an input token,
-      # so it is by definition non-nullable.
+      # the empty string. As a terminal symbol corresponds to an input token,
+      # it is by definition non-nullable.
       # @return [FalseClass]
       def nullable?
         false
       end
 
-      # Predicate method to check whether the symbol matches a non-empty sequence
-      # of terminal symbols.
+      # Predicate method to check whether the symbol always matches
+      # a non-empty sequence of terminal symbols.
       # @return [TrueClass]
       def productive?
         true
