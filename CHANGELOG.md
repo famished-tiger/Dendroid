@@ -2,6 +2,13 @@
 
 ## [Unreleased]
 
+## [0.0.5] - 2023-10-28
+### Added
+- Class `Choice` and its spec file
+
+### Fixed
+- File `dendroid.gemspec`: added missing `CHANGELOG.md` in the package
+
 ## [0.0.4] - 2023-10-28
 ### Added
 - Class `Production` and its spec file

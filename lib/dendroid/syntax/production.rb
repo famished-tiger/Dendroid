@@ -5,8 +5,7 @@ require_relative 'rule'
 module Dendroid
   module Syntax
     # A specialization of the Rule class.
-    # A production is the unique rule for the non-terminal symbol
-    # at its left-hand side (lhs).
+    # A production is a rule with a single rhs
     class Production < Rule
       # @return [Dendroid::Syntax::SymbolSeq]
       attr_reader :body
