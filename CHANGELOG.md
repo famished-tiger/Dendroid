@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [0.0.4] - 2023-10-28
+### Added
+- Class `Production` and its spec file
+
 ## [0.0.3] - 2023-10-28
 ### Added
 - Class `Rule` and its spec file
