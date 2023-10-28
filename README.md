@@ -1,12 +1,12 @@
 dendroid
 ===========
 
-FIXME (describe your package)
+A Ruby implementation of the Earley parsing algorithm. WIP
 
 Features
 --------
 
-* FIXME (list of features and unsolved problems)
+* WIP 
 
 Examples
 --------
@@ -26,7 +26,7 @@ Install
 Author
 ------
 
-Original author: FIXME (author's name)
+Original author: Dimitri Geshef
 
 Contributors:
 
@@ -36,9 +36,9 @@ Contributors:
 License
 -------
 
-(The MIT License) FIXME (different license?)
+(The MIT License)
 
-Copyright (c) 2023 FIXME (author's name)
+Copyright (c) 2023 Dimitri Geshef
 
 Permission is hereby granted, free of charge, to any person obtaining
 a copy of this software and associated documentation files (the

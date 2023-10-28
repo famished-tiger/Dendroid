@@ -26,4 +26,3 @@ describe Dendroid::Syntax::Terminal do
     end
   end # context
 end # describe
-

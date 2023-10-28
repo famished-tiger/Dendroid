@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 require_relative 'grm_symbol'
 
 module Dendroid
@@ -36,5 +37,3 @@ module Dendroid
     end # class
   end # module
 end # module
-
-

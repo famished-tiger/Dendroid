@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 require_relative 'grm_symbol'
 
 module Dendroid
@@ -12,12 +13,6 @@ module Dendroid
       # @return [Boolean] true iff the symbol always matches a non-empty
       #   sequence of terminal symbols
       attr_accessor :productive
-
-      # Constructor.
-      # aSymbolName [String] The name of the grammar symbol.
-      def initialize(symbolName)
-        super(symbolName)
-      end
 
       # Predicate method to check whether the symbol is a terminal symbol.
       # @return [FalseClass]

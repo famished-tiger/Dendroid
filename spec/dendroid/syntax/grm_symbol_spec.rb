@@ -32,6 +32,7 @@ describe Dendroid::Syntax::GrmSymbol do
       expect(subject.to_s).to eq(sample_symbol_name)
     end
 
+    # rubocop: disable Lint/BinaryOperatorWithIdenticalOperands
     it 'can compare with another symbol' do
       expect(subject == subject).to be_truthy
       same = described_class.new(sample_symbol_name)
@@ -39,5 +40,6 @@ describe Dendroid::Syntax::GrmSymbol do
       different = described_class.new('NUMBER')
       expect(subject == different).to be_falsey
     end
+    # rubocop: enable Lint/BinaryOperatorWithIdenticalOperands
   end # context
 end # describe
