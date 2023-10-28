@@ -1,3 +1,7 @@
+Layout/EndOfLine:
+  Enabled: true
+  EnforcedStyle: lf
+
 Metrics/BlockLength:
   Enabled: true
   Max: 50
