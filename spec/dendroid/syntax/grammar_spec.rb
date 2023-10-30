@@ -40,7 +40,6 @@ describe Dendroid::Syntax::Grammar do
     Dendroid::Syntax::Choice.new(lhs, sequences.map { |arr| build_symbol_seq(arr) })
   end
 
-  # rubocop: disable Metrics/AbcSize
   def build_all_rules
     rule1 = build_production(p_symb, [s_symb]) # p => s
     rule2 = build_choice(s_symb, [[s_symb, plus_symb, m_symb], [m_symb]]) # s => s + m | m
@@ -48,7 +47,6 @@ describe Dendroid::Syntax::Grammar do
     rule4 = build_production(t_symb, [int_symb]) # t => INTEGER
     [rule1, rule2, rule3, rule4]
   end
-  # rubocop: enable Metrics/AbcSize
 
   context 'Initialization:' do
     it 'is initialized with an array of terminal symbols' do
