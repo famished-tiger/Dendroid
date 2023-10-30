@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+
+## [0.0.6] - 2023-10-30
+### Added
+- Class `Grammar` and its spec file
+
 ## [0.0.5] - 2023-10-28
 ### Added
 - Class `Choice` and its spec file

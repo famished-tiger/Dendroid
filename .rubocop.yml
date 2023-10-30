@@ -2,9 +2,21 @@ Layout/EndOfLine:
   Enabled: true
   EnforcedStyle: lf
 
+Metrics/AbcSize:
+  Enabled: true
+  Max: 25
+
 Metrics/BlockLength:
   Enabled: true
-  Max: 50
+  Max: 75
+
+Metrics/ClassLength:
+  Enabled: true
+  Max: 200
+
+Metrics/MethodLength:
+  Enabled: true
+  Max: 20
 
 Naming/MethodParameterName:
   Enabled: false
