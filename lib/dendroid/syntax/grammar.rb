@@ -49,6 +49,7 @@ module Dendroid
         if nonterm2productions[rule.head]&.include? rule
           raise StandardError, "Production rule '#{production}' appears more than once in the grammar."
         end
+
         add_symbol(rule.head)
         rule.nonterminals.each { |nonterm| add_symbol(nonterm) }
         rules << rule
@@ -104,10 +105,10 @@ module Dendroid
       def at_least_one_terminal
         found = symbols.any?(&:terminal?)
 
-        unless found
-          err_msg = "Grammar doesn't contain any terminal symbol."
-          raise StandardError, err_msg
-        end
+        return true if found
+
+        err_msg = "Grammar doesn't contain any terminal symbol."
+        raise StandardError, err_msg
       end
 
       # Does every terminal symbol appear at least once
@@ -173,7 +174,6 @@ module Dendroid
           reachable_sym = backlog.pop
           prods = nonterm2productions[reachable_sym]
           prods.each do |prd|
-            # prd.body.members.each do |member|
             prd.rhs_symbols.each do |member|
               unless member.terminal? || set_reachable.include?(member)
                 backlog.push(member)
@@ -184,7 +184,7 @@ module Dendroid
         end until backlog.empty?
 
         all_symbols = Set.new(symbols)
-        unreachable = all_symbols - set_reachable
+        all_symbols - set_reachable
       end
 
       def mark_non_productive_symbols
@@ -194,7 +194,6 @@ module Dendroid
           backlog.delete(i) if prd.productive?
         end
         until backlog.empty?
-          size_before = backlog.size
           to_remove = []
           backlog.each do |i|
             prd = rules[i]
@@ -232,7 +231,7 @@ module Dendroid
           begin
             seqs_done = []
             backlog.each_pair do |sq, (elem_index, lhs)|
-              member = sq.members[elem_index]
+              member = sq[elem_index]
               if member.terminal?
                 seqs_done << sq # stop with this sequence: it is non-nullable
                 backlog[sq] = [-1, lhs]
@@ -247,14 +246,14 @@ module Dendroid
               end
             end
             seqs_done.each do |sq|
-              if backlog.include? sq
-                (_, lhs) = backlog[sq]
-                if lhs.nullable?
-                  to_drop = sym2seqs[lhs]
-                  to_drop.each { |seq| backlog.delete(seq) }
-                else
-                  backlog.delete(sq)
-                end
+              next unless backlog.include? sq
+
+              (_, lhs) = backlog[sq]
+              if lhs.nullable?
+                to_drop = sym2seqs[lhs]
+                to_drop.each { |seq| backlog.delete(seq) }
+              else
+                backlog.delete(sq)
               end
             end
           end until backlog.empty? || seqs_done.empty?

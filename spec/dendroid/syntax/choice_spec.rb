@@ -51,4 +51,18 @@ describe Dendroid::Syntax::Choice do
       expect(instance.nonterminals).to eq([expr_symb, foo_symb])
     end
   end # context
+
+  context 'Errors:' do
+    it 'fails when initialized with one alternative only' do
+      err = StandardError
+      err_msg = 'The choice for `expression` must have at least two alternatives.'
+      expect { described_class.new(expr_symb, [alt1]) }.to raise_error(err, err_msg)
+    end
+
+    it 'fails in presence of duplicate rhs' do
+      err = StandardError
+      err_msg = 'Duplicate alternatives: expression => NUMBER PLUS NUMBER'
+      expect { described_class.new(expr_symb, [alt1, alt2, alt1]) }.to raise_error(err, err_msg)
+    end
+  end # context
 end # describe

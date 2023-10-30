@@ -21,7 +21,7 @@ module Dendroid
         name.to_s
       end
 
-      # Equality testing (based on symbol name)
+      # Equality testing (based on symbol names)
       # @return [Boolean]
       def ==(other)
         name == other.name

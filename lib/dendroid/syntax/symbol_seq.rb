@@ -13,7 +13,7 @@ module Dendroid
       # @return [Array<Dendroid::Syntax::GrmSymbol>] The sequence of symbols
       attr_reader :members
 
-      def_delegators(:@members, :empty?, :first, :map, :size)
+      def_delegators(:@members, :[], :empty?, :first, :map, :size)
 
       # Create a sequence of grammar symbols (as in right-hand side of
       # a production rule).

@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [0.0.8] - 2023-10-30
+### Added
+- Class `DottedItem` and its spec file
+
 ## [0.0.7] - 2023-10-30
 ### Added
 - Class `BaseGrmBuilder` and its spec file

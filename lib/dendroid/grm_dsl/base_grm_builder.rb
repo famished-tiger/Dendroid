@@ -42,10 +42,10 @@ module Dendroid
         @rules = []
         @state = :declaring
 
-        if block_given?
-          instance_exec(&aBlock)
-          grammar_complete!
-        end
+        return unless block_given?
+
+        instance_exec(&aBlock)
+        grammar_complete!
       end
 
       # Add the given terminal symbols to the grammar of the language
@@ -54,7 +54,7 @@ module Dendroid
       def declare_terminals(*terminalSymbols)
         err_msg = "Terminal symbols may only be declared in state :declaring, current state is: #{state}"
         raise StandardError, err_msg unless state == :declaring
-        
+
         new_symbs = build_symbols(Dendroid::Syntax::Terminal, terminalSymbols)
         symbols.merge!(new_symbs)
       end
@@ -73,29 +73,30 @@ module Dendroid
       #   A Hash-based representation of a production.
       # @return [Dendroid::Syntax::Rule] The created Production or Choice instance
       def rule(productionRuleRepr)
-        raise Exception, "Cannot add a production rule in state :complete" if state == :complete
+        raise StandardError, 'Cannot add a production rule in state :complete' if state == :complete
+
         @state = :building
 
-        if productionRuleRepr.is_a?(Hash)
-          head_name = productionRuleRepr.keys.first
-          if symbols.include? head_name
-            err_msg = "Terminal symbol '#{head_name}' may not be on left-side of a rule."
-            raise StandardError, err_msg if symbols[head_name].is_a?(Dendroid::Syntax::Terminal)
-          else
-            symbols.merge!(build_symbols(Dendroid::Syntax::NonTerminal, [head_name]))
-          end
-          lhs = symbols[head_name]
-          raw_rhs = productionRuleRepr.values.first
+        return nil unless productionRuleRepr.is_a?(Hash)
 
-          if raw_rhs.is_a? String
-            new_prod = Dendroid::Syntax::Production.new(lhs, build_symbol_seq(raw_rhs))
-          else
-            rhs = raw_rhs.map { |raw| build_symbol_seq(raw) }
-            new_prod = Dendroid::Syntax::Choice.new(lhs, rhs)
-          end
-          rules << new_prod
-          new_prod
+        head_name = productionRuleRepr.keys.first
+        if symbols.include? head_name
+          err_msg = "Terminal symbol '#{head_name}' may not be on left-side of a rule."
+          raise StandardError, err_msg if symbols[head_name].is_a?(Dendroid::Syntax::Terminal)
+        else
+          symbols.merge!(build_symbols(Dendroid::Syntax::NonTerminal, [head_name]))
         end
+        lhs = symbols[head_name]
+        raw_rhs = productionRuleRepr.values.first
+
+        if raw_rhs.is_a? String
+          new_prod = Dendroid::Syntax::Production.new(lhs, build_symbol_seq(raw_rhs))
+        else
+          rhs = raw_rhs.map { |raw| build_symbol_seq(raw) }
+          new_prod = Dendroid::Syntax::Choice.new(lhs, rhs)
+        end
+        rules << new_prod
+        new_prod
       end
 
       # A method used to notify the builder that the grammar is complete
@@ -123,12 +124,10 @@ module Dendroid
 
         symbol_names = raw_stripped.split(/(?: |\t)+/)
         symbol_names.each do |symb_name|
-          if symbols.include? symb_name
-            symb_array << symbols[symb_name]
-          else
+          unless symbols.include?(symb_name)
             symbols.merge!(build_symbols(Dendroid::Syntax::NonTerminal, [symb_name]))
-            symb_array << symbols[symb_name]
           end
+          symb_array << symbols[symb_name]
         end
 
         Dendroid::Syntax::SymbolSeq.new(symb_array)

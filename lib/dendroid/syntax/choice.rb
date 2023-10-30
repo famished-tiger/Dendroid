@@ -66,15 +66,26 @@ module Dendroid
       private
 
       def valid_alternatives(alt)
+        raise StandardError, "Expecting an Array, found a #{rhs.class} instead." unless alt.is_a?(Array)
+
         if alt.size < 2
           # A choice must have at least two alternatives
-          raise StandardError.new, "The choice for #{lhs} must have at least two alternatives."
+          raise StandardError, "The choice for `#{head}` must have at least two alternatives."
         end
 
-        cyclic = alt.find { |a| a.size == 1 && lhs == a.first }
-        if cyclic
-          # Forbid cyclic rules (e.g. A => A)
-          raise StandardError.new, "Cyclic rule of the kind #{lhs} => #{lhs} is not allowed."
+        # Verify that each array element is a valid symbol sequence
+        alt.each { |elem| valid_sequence(elem) }
+
+        # Fail when duplicate rhs found
+        alt_texts = alt.map(&:to_s)
+        no_duplicate = alt_texts.uniq
+        if alt_texts.size > no_duplicate.size
+          alt_texts.each_with_index do |str, i|
+            next if str == no_duplicate[i]
+
+            err_msg = "Duplicate alternatives: #{head} => #{alt_texts[i]}"
+            raise StandardError, err_msg
+          end
         end
 
         alt

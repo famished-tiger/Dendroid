@@ -15,7 +15,7 @@ module Dendroid
       # @param rhs [Dendroid::Syntax::SymbolSeq] the sequence of symbols on rhs.
       def initialize(lhs, rhs)
         super(lhs)
-        @body = valid_body(rhs)
+        @body = valid_sequence(rhs)
       end
 
       # Predicate method to check whether the rule body (its rhs) is empty.
@@ -72,17 +72,6 @@ module Dendroid
       end
 
       private
-
-      def valid_body(rhs)
-        raise StandardError unless rhs.is_a?(SymbolSeq)
-
-        if rhs.size == 1 && lhs == rhs.first
-          # Forbid cyclic rules (e.g. A => A)
-          raise StandardError.new, "Cyclic rule of the kind #{lhs} => #{lhs} is not allowed."
-        end
-
-        rhs
-      end
 
       def productive=(val)
         @productive = val

@@ -4,7 +4,7 @@ Layout/EndOfLine:
 
 Metrics/AbcSize:
   Enabled: true
-  Max: 25
+  Max: 29
 
 Metrics/BlockLength:
   Enabled: true
@@ -13,10 +13,18 @@ Metrics/BlockLength:
 Metrics/ClassLength:
   Enabled: true
   Max: 200
+  
+Metrics/CyclomaticComplexity:  
+  Enabled: true
+  Max: 10
 
 Metrics/MethodLength:
   Enabled: true
-  Max: 20
+  Max: 30
+  
+Metrics/PerceivedComplexity:
+  Enabled: true
+  Max: 10  
 
 Naming/MethodParameterName:
   Enabled: false

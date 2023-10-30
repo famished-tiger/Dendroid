@@ -12,6 +12,7 @@ describe Dendroid::Syntax::Production do
   let(:expr_symb) { Dendroid::Syntax::NonTerminal.new('expression') }
   let(:foo_symb) { Dendroid::Syntax::NonTerminal.new('foo') }
   let(:rhs) { Dendroid::Syntax::SymbolSeq.new([num_symb, plus_symb, num_symb]) }
+  let(:cyclic_rhs) { Dendroid::Syntax::SymbolSeq.new([foo_symb]) }
   let(:empty_body) { Dendroid::Syntax::SymbolSeq.new([]) }
 
   # Implements a production rule: expression => NUMBER PLUS NUMBER
@@ -73,5 +74,19 @@ describe Dendroid::Syntax::Production do
       expect(empty == void).to be_falsey
     end
     # rubocop: enable Lint/BinaryOperatorWithIdenticalOperands
+  end # context
+
+  context 'Errors:' do
+    it "fails when rhs isn't initialized with a SymbolSeq" do
+      err = StandardError
+      err_msg = 'Expecting a SymbolSeq, found a String instead.'
+      expect { described_class.new(foo_symb, 'bad') }.to raise_error err, err_msg
+    end
+
+    it 'fails when the production is cyclic' do
+      err = StandardError
+      err_msg = 'Cyclic rules of the kind foo => foo are not allowed.'
+      expect { described_class.new(foo_symb, cyclic_rhs) }.to raise_error err, err_msg
+    end
   end # context
 end # describe

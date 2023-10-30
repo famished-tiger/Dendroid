@@ -20,4 +20,11 @@ describe Dendroid::Syntax::Rule do
       expect(subject.head).to eq(expr_symb)
     end
   end # context
+
+  context 'Errors:' do
+    it 'fails when initialized with a terminal' do
+      msg = "Terminal symbol 'NUMBER' may not be on left-side of a rule."
+      expect { described_class.new(num_symb) }.to raise_error(StandardError, msg)
+    end
+  end
 end # describe

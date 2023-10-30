@@ -3,10 +3,12 @@ dendroid
 
 A Ruby implementation of the Earley parsing algorithm. WIP
 
+dendroid - Resembling a tree in form and branching structure.
+
 Features
 --------
 
-* WIP 
+* WIP
 
 Examples
 --------

@@ -47,6 +47,19 @@ module Dendroid
         rhs_symbols.select(&:terminal?)
       end
 
+      protected
+
+      def valid_sequence(rhs)
+        raise StandardError, "Expecting a SymbolSeq, found a #{rhs.class} instead." unless rhs.is_a?(SymbolSeq)
+
+        if rhs.size == 1 && lhs == rhs.first
+          # Forbid cyclic rules (e.g. A => A)
+          raise StandardError.new, "Cyclic rules of the kind #{lhs} => #{lhs} are not allowed."
+        end
+
+        rhs
+      end
+
       private
 
       def valid_head(lhs)
