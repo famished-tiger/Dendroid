@@ -2,6 +2,19 @@
 
 ## [Unreleased]
 
+## [0.0.9] - 2023-11-01
+Added classes for tokenization and grammar analysis.
+
+### Added
+- Class `AlternativeItem` and its spec file
+- Class `BaseTokenizer` and its spec file
+- Module `ChoiceItems` and its spec file- 
+- Class `GrmAnalyzer` and its spec file
+- Class `Literal` and its spec file
+- Module `ProductionItems` and its spec file
+- Class `Token` and its spec file
+- Class `TokenPosition` and its spec file
+
 ## [0.0.8] - 2023-10-30
 ### Added
 - Class `DottedItem` and its spec file

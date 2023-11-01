@@ -7,7 +7,7 @@ Gem::Specification.new do |s|
     path = ::File.dirname(libpath) + ::File::SEPARATOR
     ::File.read("#{path}version.txt").strip
   end
-  s.summary     = 'Dendroid. TODO'
+  s.summary     = 'WIP. A Ruby implementation of a Earley parser'
   s.description = 'WIP. A Ruby implementation of a Earley parser'
   s.authors     = ['Dimitri Geshef']
   s.email       = 'famished.tiger@yahoo.com'
@@ -16,6 +16,7 @@ Gem::Specification.new do |s|
                       'lib/**/*.rb',
                       'spec/**/*.rb',
                       '.rubocop.yml',
+                      'CHANGELOG.md',
                       'dendroid.gemspec',
                       'LICENSE',
                       'Rakefile',

@@ -87,7 +87,7 @@ module Dendroid
       end
 
       # Check whether the given symbol is the same as after the dot.
-      # @param [Dendroid::Syntax::GrmSymbol]
+      # @param aSymbol [Dendroid::Syntax::GrmSymbol]
       # @return [Boolean]
       def expecting?(aSymbol)
         actual = next_symbol
