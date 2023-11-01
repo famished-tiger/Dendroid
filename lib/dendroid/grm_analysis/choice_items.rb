@@ -52,6 +52,7 @@ module Dendroid
       def next_item(anItem)
         items_arr = items[anItem.alt_index]
         return nil if anItem == items_arr.last
+
         items_arr[anItem.position + 1]
       end
     end # module

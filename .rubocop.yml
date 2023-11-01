@@ -20,7 +20,7 @@ Metrics/CyclomaticComplexity:
 
 Metrics/MethodLength:
   Enabled: true
-  Max: 30
+  Max: 60
   
 Metrics/PerceivedComplexity:
   Enabled: true
@@ -30,6 +30,9 @@ Naming/MethodParameterName:
   Enabled: false
   
 Naming/VariableName:  
+  Enabled: false
+
+Style/AccessorGrouping:
   Enabled: false
 
 Style/CommentedKeyword:

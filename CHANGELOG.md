@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [0.0.10] - 2023-11-01
+Added missing class and method documentation, fixed some `Rubocop` offenses.
+
+
 ## [0.0.9] - 2023-11-01
 Added classes for tokenization and grammar analysis.
 

@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 module Dendroid
+  # This module contains classes that from the analysis of grammar rules help to build objects
+  # needed by a recognizer or a parser for the language.
   module GrmAnalysis
     # For a given production rule, a dotted item represents a recognition state.
     # The dot partitions the rhs of the rule in two parts:

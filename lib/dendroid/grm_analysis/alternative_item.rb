@@ -61,11 +61,10 @@ module Dendroid
       private
 
       def valid_position(aPosition)
-        raise Exception if aPosition < 0 || aPosition > rule.alternatives[alt_index].size
+        raise StandardError if aPosition.negative? || aPosition > rule.alternatives[alt_index].size
 
         aPosition
       end
     end # class
   end # module
 end # module
-

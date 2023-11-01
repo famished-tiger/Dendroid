@@ -24,7 +24,7 @@ module Dendroid
       attr_reader :position
 
       # @return [String] The name of terminal symbol matching the text.
-      attr :terminal
+      attr_reader :terminal
 
       # Constructor.
       # @param original [String] the piece of text from input

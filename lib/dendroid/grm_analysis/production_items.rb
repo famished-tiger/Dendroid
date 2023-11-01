@@ -14,7 +14,7 @@ module Dendroid
         @items = if empty?
                    [DottedItem.new(self, 0)]
                  else
-                   (0..body.size).reduce([]) do | result,pos|
+                   (0..body.size).reduce([]) do |result, pos|
                      result << GrmAnalysis::DottedItem.new(self, pos)
                    end
                  end
@@ -47,6 +47,7 @@ module Dendroid
       # @return [GrmAnalysis::DottedItem|NilClass]
       def next_item(anItem)
         return nil if anItem == @items.last
+
         @items[anItem.position + 1]
       end
     end # module

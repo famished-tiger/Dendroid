@@ -5,19 +5,34 @@ require_relative '../grm_analysis/choice_items'
 
 module Dendroid
   module GrmAnalysis
-    # An analyzer performs an analysis of the rules of a given grammar
-    #
+    # An analyzer performs an analysis of the grammar rules and
+    # build objects (dotted items, first and follow sets) to be used
+    # by a recognizer or a parser.
     class GrmAnalyzer
+      # @return [Dendroid::Syntax::Grammar] The grammar subjected to analysis
       attr_reader :grammar
       attr_reader :items
       attr_reader :production2items
       attr_reader :symbol2productions
+
+      # @return [Dendroid::Syntax::Terminal] The pseudo-terminal `__epsilon` (for empty string)
       attr_reader :epsilon
+
+      # @return [Dendroid::Syntax::Terminal] The pseudo-terminal `$$` for end of input stream
       attr_reader :endmarker
+
+      # @return [Hash{Syntax::NonTerminal, Array<Syntax::Terminal>}] non-terminal to FIRST SETS mapping
       attr_reader :first_sets
+
+      # @return [Hash{Syntax::NonTerminal, Array<Syntax::Terminal>}] non-terminal to PREDICT SETS mapping
       attr_reader :predict_sets
+
+      # @return [Hash{Syntax::NonTerminal, Array<Syntax::Terminal>}] non-terminal to FOLLOW SETS mapping
       attr_reader :follow_sets
 
+      # Constructor.
+      # Build dotted items, first, follow sets for the given grammar
+      # @param aGrammar [Dendroid::Syntax::Grammar]
       def initialize(aGrammar)
         @grammar = aGrammar
         @items = []
@@ -34,6 +49,8 @@ module Dendroid
         build_follow_sets
       end
 
+      # The next item of a given dotted item
+      # @param aDottedItem [DottedItem]
       def next_item(aDottedItem)
         prod = aDottedItem.rule
         prod.next_item(aDottedItem)
@@ -72,7 +89,7 @@ module Dendroid
             else
               first_head.merge(sequence_first(prod.body.members))
             end
-            changed = true if (first_head.size > pre_first_size)
+            changed = true if first_head.size > pre_first_size
           end
         end until !changed
       end
@@ -84,7 +101,7 @@ module Dendroid
           elsif symb.nullable?
             first_sets[symb] = Set.new([epsilon])
           else
-            first_sets[symb]  = Set.new
+            first_sets[symb] = Set.new
           end
         end
       end
@@ -115,7 +132,7 @@ module Dendroid
 
                 head = prod.head
                 head_follow = follow_sets[head]
-                trailer = Set.new
+                # trailer = Set.new
                 last = true
                 last_index = body.size - 1
                 last_index.downto(0) do |i|
@@ -130,7 +147,7 @@ module Dendroid
                     follow_sets[symbol].merge(head_follow) if symbol.nullable?
                     last = false
                   else
-                    symbol_seq = body.slice(i+1, last_index - i)
+                    symbol_seq = body.slice(i + 1, last_index - i)
                     trailer_first = sequence_first(symbol_seq)
                     contains_epsilon = trailer_first.include? epsilon
                     trailer_first.delete(epsilon) if contains_epsilon
@@ -146,7 +163,7 @@ module Dendroid
 
               head = prod.head
               head_follow = follow_sets[head]
-              trailer = Set.new
+              # trailer = Set.new
               last = true
               last_index = body.size - 1
               last_index.downto(0) do |i|
@@ -161,7 +178,7 @@ module Dendroid
                   follow_sets[symbol].merge(head_follow) if symbol.nullable?
                   last = false
                 else
-                  symbol_seq = body.slice(i+1, last_index - i)
+                  symbol_seq = body.slice(i + 1, last_index - i)
                   trailer_first = sequence_first(symbol_seq)
                   contains_epsilon = trailer_first.include? epsilon
                   trailer_first.delete(epsilon) if contains_epsilon
@@ -179,7 +196,7 @@ module Dendroid
         grammar.symbols.each do |symb|
           next if symb.terminal?
 
-          follow_sets[symb]  = Set.new
+          follow_sets[symb] = Set.new
         end
 
         # Initialize FOLLOW(start symbol) with end marker

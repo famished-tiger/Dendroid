@@ -5,44 +5,67 @@ require_relative '../lexical/token_position'
 require_relative '../lexical/literal'
 
 module Dendroid
+  # This module contains helper classes (e.g. a tokenizer generator)
   module Utils
+    # A basic tokenizer.
+    # Responsibility: break input into a sequence of token objects.
+    # This class defines a simple DSL to build a tokenizer.
     class BaseTokenizer
+      # @return [StringScanner] Low-level input scanner
       attr_reader :scanner
+
+      # @return [Integer] The current line number
       attr_reader :lineno
+
+      # @return [Integer] Position of last start of line in the input string
       attr_reader :line_start
+
+      # @return [Hash{Symbol, Array<Regexp>}]
       attr_reader :actions
 
+      # Constructor
+      # @param aBlock [Proc]
       def initialize(&aBlock)
         @scanner = StringScanner.new('')
         @actions = { skip: [], scan_verbatim: [], scan_value: [] }
         defaults
+        return unless block_given?
 
-        if block_given?
-          instance_exec(&aBlock)
-          # grammar_complete!
-        end
+        instance_exec(&aBlock)
       end
 
+      # Reset the tokenizer and set new text to tokenize
+      # @param source [String]
       def input=(source)
-        scanner.string = source
         reset
+        scanner.string = source
       end
 
+      # Reset the tokenizer
       def reset
         @lineno = 1
         @line_start = 0
+        scanner.reset
       end
 
       # action, pattern, terminal?, conversion?
       # action = skip, skip_nl, scan
+
+      # Associate the provided pattern to the action of skipping a newline and
+      # incrementing the line counter.
+      # @param pattern [Regexp]
       def skip_nl(pattern)
         actions[:skip_nl] = pattern
       end
 
+      # Associate the provided pattern with the action to skip whitespace(s).
+      # @param pattern [Regexp]
       def skip_ws(pattern)
         actions[:skip_ws] = pattern
       end
 
+      # Associate the provided pattern with the action to skip the matching text.
+      # @param pattern [Regexp]
       def skip(pattern)
         if actions[:skip].empty?
           actions[:skip] = pattern
@@ -52,6 +75,8 @@ module Dendroid
         end
       end
 
+      # Associate the provided pattern with the action to tokenize the matching text
+      # @param pattern [Regexp]
       def scan_verbatim(pattern)
         patt = normalize_pattern(pattern)
         if actions[:scan_verbatim].empty?
@@ -62,9 +87,15 @@ module Dendroid
         end
       end
 
-      def scan_value(pattern, terminal, convertion)
+      # Associate the provided pattern with the action to tokenize the matching text
+      # as an instance of the given terminal symbol and convert the matching text into
+      # a value by using the given conversion.
+      # @param pattern [Regexp]
+      # @param terminal [Dendroid::Syntax::Terminal]
+      # @param conversion [Proc] a Proc (lambda) that takes a String as argument and return a value.
+      def scan_value(pattern, terminal, conversion)
         patt = normalize_pattern(pattern)
-        tuple = [patt, terminal, convertion]
+        tuple = [patt, terminal, conversion]
         if actions[:scan_value].empty?
           actions[:scan_value] = [tuple]
         else
@@ -72,10 +103,16 @@ module Dendroid
         end
       end
 
+      # Set the mapping between a verbatim text to its corresponding terminal symbol name
+      # @param mapping [Hash{String, String}]
       def map_verbatim2terminal(mapping)
         @verbatim2terminal = mapping
       end
 
+      # rubocop: disable Metrics/AbcSize
+
+      # Return the next token (if any) from the input stream.
+      # @return [Dendroid::Lexical::Token, NilClass]
       def next_token
         token = nil
 
@@ -93,7 +130,7 @@ module Dendroid
             break
           end
 
-          tuple = actions[:scan_value].find do |(pattern, terminal, conversion)|
+          tuple = actions[:scan_value].find do |(pattern, _terminal, _conversion)|
             scanner.check(pattern)
           end
           if tuple
@@ -106,18 +143,20 @@ module Dendroid
           # Unknown token
           col = scanner.pos - line_start + 1
           erroneous = scanner.peek(1).nil? ? '' : scanner.scan(/./)
-          raise Exception, "Error: [line #{lineno}:#{col}]: Unexpected character #{erroneous}."
+          raise StandardError, "Error: [line #{lineno}:#{col}]: Unexpected character #{erroneous}."
         end
 
         token
       end
 
+      # rubocop: enable Metrics/AbcSize
+
       protected
 
       def defaults
         # Defaults
-        skip_nl /(?:\r\n)|\r|\n/  # Skip newlines
-        skip_ws /[ \t\f]+/ # Skip blanks
+        skip_nl(/(?:\r\n)|\r|\n/) # Skip newlines
+        skip_ws(/[ \t\f]+/) # Skip blanks
       end
 
       private
@@ -146,7 +185,7 @@ module Dendroid
           col = scanner.pos - lex_length - @line_start + 1
           pos = Lexical::TokenPosition.new(@lineno, col)
           token = Lexical::Token.new(text, pos, symbol_name)
-        rescue Exception => e
+        rescue StandardError => e
           puts "Failing with '#{symbol_name}' and '#{text}'"
           raise e
         end
@@ -154,15 +193,15 @@ module Dendroid
         token
       end
 
-      def value_scanned(aText, aSymbolName, convertion)
-        value = convertion.call(aText)
+      def value_scanned(aText, aSymbolName, conversion)
+        value = conversion.call(aText)
         lex_length = aText ? aText.size : 0
         col = scanner.pos - lex_length - @line_start + 1
         build_literal(aSymbolName, value, aText, col)
       end
 
       def build_literal(aSymbolName, aValue, aText, aPosition)
-        pos = if aPosition.kind_of?(Integer)
+        pos = if aPosition.is_a?(Integer)
                 col = aPosition
                 Lexical::TokenPosition.new(@lineno, col)
               else

@@ -9,7 +9,7 @@ describe Dendroid::Utils::BaseTokenizer do
 
   context 'Initialization:' do
     it 'is initialized with an optional block' do
-      expect {described_class.new }.not_to raise_error
+      expect { described_class.new }.not_to raise_error
     end
 
     it 'has a scanner at start' do
@@ -24,11 +24,11 @@ describe Dendroid::Utils::BaseTokenizer do
 
   context 'Tokenizing:' do
     subject do
-      described_class.new {
+      described_class.new do
         scan_verbatim(['+', '*'])
         scan_value(/\d+/, :INTEGER, ->(txt) { txt.to_i })
         map_verbatim2terminal({ '+' => :PLUS, '*' => :STAR })
-      }
+      end
     end
 
     it 'generates a sequence of tokens from a simple input' do
@@ -43,7 +43,7 @@ describe Dendroid::Utils::BaseTokenizer do
       ]
       expectations.each do |tuple|
         tok = subject.next_token
-        [:pos_to_s, :source, :terminal, :value].each_with_index do |message, index|
+        %i[pos_to_s source terminal value].each_with_index do |message, index|
           expect(tok.send(message)).to eq(tuple[index]) unless tuple[index].nil?
         end
       end

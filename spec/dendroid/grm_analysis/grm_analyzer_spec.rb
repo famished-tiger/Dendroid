@@ -52,7 +52,8 @@ module SampleGrammars
                               '*' => :STAR,
                               '/' => :SLASH,
                               '(' => :LPAREN,
-                              ')' => :RPAREN })
+                              ')' => :RPAREN
+                            })
 
       scan_verbatim(['+', '-', '*', '/', '(', ')'])
       scan_value(/\d+/, :NUMBER, ->(txt) { txt.to_i })
@@ -67,7 +68,7 @@ module SampleGrammars
 
       rule('Z' => ['d', 'X Y Z'])
       rule('Y' => ['', 'c'])
-      rule('X' => ['Y', 'a'])
+      rule('X' => %w[Y a])
     end
 
     builder.grammar
@@ -91,7 +92,7 @@ describe Dendroid::GrmAnalysis::GrmAnalyzer do
 
     it 'knows the dotted items' do
       item_count = subject.grammar.rules.reduce(0) do |count, prod|
-        count += prod.items.flatten.size
+        count + prod.items.flatten.size
       end
       expect(subject.items.size).to eq(item_count)
       expected_items = [
@@ -116,7 +117,7 @@ describe Dendroid::GrmAnalysis::GrmAnalyzer do
     end
 
     it 'knows the item that follows a given dotted item' do
-      first_item = subject.items.find { |itm| itm.to_s ==  'm => . m STAR t' }
+      first_item = subject.items.find { |itm| itm.to_s == 'm => . m STAR t' }
       second = subject.next_item(first_item)
       expect(second.to_s).to eq('m => m . STAR t')
       third = subject.next_item(second)
@@ -134,9 +135,9 @@ describe Dendroid::GrmAnalysis::GrmAnalyzer do
         'a' => ['a'],
         'c' => ['c'],
         'd' => ['d'],
-        'X' => ['a', 'c'], # Add epsilon
+        'X' => %w[a c], # Add epsilon
         'Y' => ['c'], # Add epsilon
-        'Z' => ['a', 'c', 'd']
+        'Z' => %w[a c d]
       }
       expectations.each_pair do |sym_name, first_names|
         symb = subject.grammar.name2symbol[sym_name]
@@ -149,8 +150,8 @@ describe Dendroid::GrmAnalysis::GrmAnalyzer do
     it 'constructs the FOLLOW sets for non-terminal symbols' do
       expectations = {
         'Z' => [], # Add $$
-        'Y' => ['a', 'c', 'd'],
-        'X' => ['a', 'c', 'd']
+        'Y' => %w[a c d],
+        'X' => %w[a c d]
       }
       subject.send(:build_follow_sets)
       expectations.each_pair do |sym_name, follow_names|

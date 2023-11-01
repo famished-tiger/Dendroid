@@ -7,8 +7,8 @@ Gem::Specification.new do |s|
     path = ::File.dirname(libpath) + ::File::SEPARATOR
     ::File.read("#{path}version.txt").strip
   end
-  s.summary     = 'WIP. A Ruby implementation of a Earley parser'
-  s.description = 'WIP. A Ruby implementation of a Earley parser'
+  s.summary     = 'WIP. A Ruby implementation of an Earley parser'
+  s.description = 'WIP. A Ruby implementation of an Earley parser'
   s.authors     = ['Dimitri Geshef']
   s.email       = 'famished.tiger@yahoo.com'
   s.files       = Dir['bin/dendroid',

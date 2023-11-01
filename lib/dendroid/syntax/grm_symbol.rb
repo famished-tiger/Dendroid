@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 module Dendroid
-  # The namespace for all classes used to build a grammar.
+  # This module contains for all classes representing elements of .
   module Syntax
     # Abstract class for grammar symbols.
     # A grammar symbol is an element that appears in grammar rules.
