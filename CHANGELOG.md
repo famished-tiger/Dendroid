@@ -2,6 +2,18 @@
 
 ## [Unreleased]
 
+## [0.0.11] - 2023-11-02
+Added Earley recognizer and its ancillary classes.
+
+### Added
+- Class `Chart` and its spec file
+- Class `EItem` and its spec file
+- Class `ItemSet` and its spec file
+- Class `Recognizer` and its spec file
+
+### Changed
+- RSpec tests: moved module `SampleGrammars` to separate file in folder `support`
+
 ## [0.0.10] - 2023-11-01
 Added missing class and method documentation, fixed some `Rubocop` offenses.
 
