@@ -47,7 +47,7 @@ module Dendroid
         end
         # TODO: add test for duplicate productions
         if nonterm2productions[rule.head]&.include? rule
-          raise StandardError, "Production rule '#{production}' appears more than once in the grammar."
+          raise StandardError, "Production rule '#{rule}' appears more than once in the grammar."
         end
 
         add_symbol(rule.head)

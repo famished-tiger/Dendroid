@@ -4,9 +4,11 @@ require_relative 'item_set'
 
 module Dendroid
   module Recognizer
-    # Also called a parse table.
-    # Assuming that n == number of input tokens,
-    # then the chart is an array with n + 1 entry sets.
+    # Also called a parse table. It records the progress of the
+    # Earley recognizer whens its verifies the compliance of the input text
+    # to the language grammar rules.
+    # It essentially consists in an array of item sets.
+    # If n is the number of input tokens then the chart has n + 1 entry sets.
     class Chart
       extend Forwardable
 
@@ -33,7 +35,7 @@ module Dendroid
       end
 
       # Add a new empty item set at the end of the array of item sets
-      def append_new_set()
+      def append_new_set
         item_sets << ItemSet.new
       end
 

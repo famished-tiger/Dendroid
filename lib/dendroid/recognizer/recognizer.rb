@@ -16,11 +16,16 @@ module Dendroid
       # @return [Object]
       attr_reader :tokenizer
 
+      # @param grammar [Dendroid::Syntax::Grammar]
+      # @param tokenizer [Object]
       def initialize(grammar, tokenizer)
         @grm_analysis = GrmAnalysis::GrmAnalyzer.new(grammar)
         @tokenizer = tokenizer
       end
 
+      # Try to read the `source` text and verify that it is syntactically correct.
+      # @param source [String] Input text to recognize
+      # @return [Dendroid::Recognizer::Chart]
       def run(source)
         tokenizer.input = source
         tok = tokenizer.next_token
@@ -34,6 +39,8 @@ module Dendroid
         end
       end
 
+      # Run the Earley algorithm
+      # @param initial_token [Dednroid::Lexical::Token]
       def earley_parse(initial_token)
         chart = new_chart
         tokens = [initial_token]
@@ -42,7 +49,7 @@ module Dendroid
         rank = 0
 
         loop do
-          eos_reached = advance_next_token(tokens, predicted_symbols) unless eos_reached
+          eos_reached ||= advance_next_token(tokens, predicted_symbols)
 
           advance = false
           curr_rank = rank
@@ -55,7 +62,7 @@ module Dendroid
 
           rank += 1 if advance
           break if eos_reached && !advance
-          break if ! advance
+          break if !advance
         end
 
         determine_outcome(chart, tokens)
@@ -106,15 +113,14 @@ module Dendroid
 
         advance
       end
-=begin
-    procedure PREDICTOR((A → α•Bβ, j), k)
-        for each (B → γ) in GRAMMAR_RULES_FOR(B) do
-            ADD_TO_SET((B → •γ, k), S[k])
-        end
-      Assuming next symbol is a non-terminal
 
-      Error case: next actual token matches none of the expected tokens.
-=end
+      # procedure PREDICTOR((A → α•Bβ, j), k)
+      #     for each (B → γ) in GRAMMAR_RULES_FOR(B) do
+      #         ADD_TO_SET((B → •γ, k), S[k])
+      #     end
+      #   Assuming next symbol is a non-terminal
+      #
+      #   Error case: next actual token matches none of the expected tokens.
       def predictor(chart, item, rank, tokens, mode, predicted_symbols)
         next_symbol = item.next_symbol
         if mode == :genuine
@@ -152,13 +158,11 @@ module Dendroid
         end
       end
 
-=begin
-    procedure SCANNER((A → α•aβ, j), k, words)
-        if j < LENGTH(words) and a ⊂ PARTS_OF_SPEECH(words[k]) then
-            ADD_TO_SET((A → αa•β, j), S[k+1])
-        end
-    Assuming next symbol is a terminal
-=end
+      # procedure SCANNER((A → α•aβ, j), k, words)
+      #     if j < LENGTH(words) and a ⊂ PARTS_OF_SPEECH(words[k]) then
+      #         ADD_TO_SET((A → αa•β, j), S[k+1])
+      #     end
+      # Assuming next symbol is a terminal
       def scanner(chart, scan_item, rank, tokens)
         advance = false
         dit = scan_item.dotted_item
@@ -174,12 +178,10 @@ module Dendroid
         advance
       end
 
-=begin
-    procedure COMPLETER((B → γ•, x), k)
-        for each (A → α•Bβ, j) in S[x] do
-            ADD_TO_SET((A → αB•β, j), S[k])
-        end
-=end
+      # procedure COMPLETER((B → γ•, x), k)
+      #     for each (A → α•Bβ, j) in S[x] do
+      #         ADD_TO_SET((A → αB•β, j), S[k])
+      #     end
       def completer(chart, item, rank, tokens, mode)
         origin = item.origin
 
@@ -190,6 +192,7 @@ module Dendroid
         callers.each do |call_item|
           return_item = grm_analysis.next_item(call_item.dotted_item)
           next unless return_item
+
           member = return_item.next_symbol
           if member&.terminal? && (mode == :genuine)
             next unless next_token
@@ -222,12 +225,13 @@ module Dendroid
           end
           last_set = chart.item_sets.last
           last_set.each do |entry|
-            next if ((!entry.origin.zero?) || ! final_items.include?(entry.dotted_item))
+            next if ((!entry.origin.zero?) || !final_items.include?(entry.dotted_item))
+
             success = true
           end
         end
 
-        if !success
+        unless success
           # Error detected...
           replay_last_set(chart, tokens)
           if chart.size < tokens.size + 1
@@ -242,7 +246,7 @@ module Dendroid
             end
             terminals.uniq!
             prefix = "Syntax error at or near token line #{line}, column #{col} >>>#{offending_token.source}<<<"
-            expectation = terminals.size == 1 ? "#{terminals[0].name}" : "one of: [#{terminals.map(&:name).join(', ')}]"
+            expectation = terminals.size == 1 ? terminals[0].name.to_s : "one of: [#{terminals.map(&:name).join(', ')}]"
             err_msg = "#{prefix} Expected #{expectation}, found a #{offending_token.terminal} instead."
             chart.failure_class = StandardError
             chart.failure_reason = err_msg
@@ -259,7 +263,7 @@ module Dendroid
             terminals.uniq!
 
             prefix = "Line #{line}, column #{col}: Premature end of input after '#{last_token.source}'"
-            expectation = terminals.size == 1 ? "#{terminals[0].name}" : "one of: [#{terminals.map(&:name).join(', ')}]"
+            expectation = terminals.size == 1 ? terminals[0].name.to_s : "one of: [#{terminals.map(&:name).join(', ')}]"
             err_msg = "#{prefix}, expected: #{expectation}."
             chart.failure_class = StandardError
             chart.failure_reason = err_msg

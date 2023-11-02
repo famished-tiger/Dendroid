@@ -2,6 +2,13 @@
 
 ## [Unreleased]
 
+## [0.0.12] - 2023-11-02
+Added more tests.
+
+### Added
+- Added more tests to spec file of `Grammar` class.
+- Added more tests to spec file of `Recognizer` class.
+
 ## [0.0.11] - 2023-11-02
 Added Earley recognizer and its ancillary classes.
 

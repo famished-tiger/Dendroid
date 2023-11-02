@@ -7,6 +7,7 @@ require_relative '..\..\..\lib\dendroid\syntax\symbol_seq'
 require_relative '..\..\..\lib\dendroid\syntax\production'
 require_relative '..\..\..\lib\dendroid\syntax\choice'
 require_relative '..\..\..\lib\dendroid\syntax\grammar'
+require_relative '..\..\..\lib\dendroid\grm_dsl\base_grm_builder'
 
 describe Dendroid::Syntax::Grammar do
   let(:int_symb) { build_terminal('INTEGER') }
@@ -200,4 +201,148 @@ describe Dendroid::Syntax::Grammar do
       expect(nonproductive).to eq([nterm_D, nterm_F])
     end
   end # context
+
+  context 'Errors with terminal symbols' do
+    def grm_terminal_in_lhs
+      builder = Dendroid::GrmDSL::BaseGrmBuilder.new do
+        declare_terminals('a', 'b', 'c')
+
+        rule 'S' => 'A'
+        rule 'a' => 'a A c' # Wrong: terminal 'a' in lhs
+        rule 'A' => 'b'
+      end
+
+      builder.grammar
+    end
+
+    def grm_cyclic
+      builder = Dendroid::GrmDSL::BaseGrmBuilder.new do
+        declare_terminals('x')
+
+        rule 'S' => %w[S x] # Wrong: cyclic production (lhs and rhs are the same)
+      end
+
+      builder.grammar
+    end
+
+    def grm_no_terminal
+      builder = Dendroid::GrmDSL::BaseGrmBuilder.new do
+        # No terminal symbol explicitly declared => all symbols are non-terminals
+
+        rule 'S' => 'A'
+        rule 'A' => 'a A c'
+        rule 'A' => 'b'
+      end
+
+      builder.grammar
+    end
+
+    def unused_terminals
+      builder = Dendroid::GrmDSL::BaseGrmBuilder.new do
+        declare_terminals('a', 'b', 'c', 'd', 'e')
+
+        # # Wrong: terminals 'd' and 'e' never appear in rules
+        rule 'S' => 'A'
+        rule 'A' => 'a A c'
+        rule 'A' => 'b'
+      end
+
+      builder.grammar
+    end
+
+    it 'raises an error if there is no terminal symbol' do
+      err_msg = "Grammar doesn't contain any terminal symbol."
+      expect { grm_no_terminal }.to raise_error(StandardError, err_msg)
+    end
+
+    it 'raises an error if a terminal is in lhs of production' do
+      err_msg = "Terminal symbol 'a' may not be on left-side of a rule."
+      expect { grm_terminal_in_lhs }.to raise_error(StandardError, err_msg)
+    end
+
+    it 'raises an error if a terminal never appear in rules' do
+      err_msg = "Terminal symbols 'd', 'e' never appear in production rules."
+      expect { unused_terminals }.to raise_error(StandardError, err_msg)
+    end
+
+    it 'raises an error if a production is cyclic' do
+      err_msg = 'Cyclic rules of the kind S => S are not allowed.'
+      expect { grm_cyclic }.to raise_error(StandardError, err_msg)
+    end
+  end # context
+
+  context 'Errors with non-terminal symbols' do
+    def grm_undefined_nterm
+      builder = Dendroid::GrmDSL::BaseGrmBuilder.new do
+        declare_terminals('x')
+
+        rule 'S' => %w[x A] # Wrong: A is never defined
+      end
+
+      builder.grammar
+    end
+
+    def duplicate_production
+      builder = Dendroid::GrmDSL::BaseGrmBuilder.new do
+        declare_terminals('a', 'b', 'c')
+
+        rule 'S' => 'A'
+        rule 'A' => ['a A c', 'b']
+        rule 'S' => 'A' # Duplicate rule
+      end
+
+      builder.grammar
+    end
+
+    def grm_unreachable_symbols
+      builder = Dendroid::GrmDSL::BaseGrmBuilder.new do
+        declare_terminals('a', 'b', 'c')
+
+        rule 'S' => 'A'
+        rule 'A' => ['a A c', 'b']
+        rule 'Z' => 'a Z X'
+        rule 'X' => 'b b'
+      end
+
+      builder.grammar
+    end
+
+    def nonproductive_symbols
+      builder = Dendroid::GrmDSL::BaseGrmBuilder.new do
+        declare_terminals('a', 'b', 'c', 'd', 'e', 'f')
+
+        # # Wrong: terminals 'D' and 'F' are non-productive (they never reduce to a string of terminals)
+        rule 'S' => ['A B', 'D E']
+        rule 'A' => 'a'
+        rule 'B' => 'b C'
+        rule 'C' => 'c'
+        rule 'D' => 'd F'
+        rule 'E' => 'e'
+        rule 'F' => 'f D'
+      end
+
+      builder.grammar
+    end
+
+    it 'raises an error when a non-terminal is never defined' do
+      err_msg = "Non-terminal symbols 'A' never appear in head of any production rule."
+      expect { grm_undefined_nterm }.to raise_error(StandardError, err_msg)
+    end
+
+    it 'raises an error when a production is duplicated' do
+      err_msg = "Production rule 'S => A' appears more than once in the grammar."
+      expect { duplicate_production }.to raise_error(StandardError, err_msg)
+    end
+
+    it 'raises an error when a non-terminal is unreachable' do
+      # err_msg = "Symbols 'Z', 'X' are unreachable from start symbol."
+      err_msg = "Symbols 'Z' are non-productive."
+      expect { grm_unreachable_symbols }.to raise_error(StandardError, err_msg)
+    end
+
+    it 'raises an error when a non-terminal is non-productive' do
+      err_msg = "Symbols 'D', 'F' are non-productive."
+      expect { nonproductive_symbols }.to raise_error(StandardError, err_msg)
+    end
+  end # contex
 end # describe

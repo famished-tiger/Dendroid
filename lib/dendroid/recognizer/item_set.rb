@@ -8,6 +8,7 @@ module Dendroid
 
       # @return [Recognizer::EItem]
       attr_reader :items
+
       def_delegators :@items, :clear, :each, :empty?, :select, :size
 
       def initialize

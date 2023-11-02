@@ -41,12 +41,16 @@ describe Dendroid::Recognizer::EItem do
       expect(subject.lhs).to eq(expr_symb)
     end # context
 
+    # rubocop: disable Lint/BinaryOperatorWithIdenticalOperands
+
     it 'can compare with another EItem' do
       expect(subject == subject).to be_truthy
       expect(subject == described_class.new(sample_dotted, sample_origin)).to be_truthy
       expect(subject == described_class.new(sample_dotted, 2)).to be_falsey
       expect(subject == described_class.new(other_dotted, sample_origin)).to be_falsey
     end
+
+    # rubocop: enable Lint/BinaryOperatorWithIdenticalOperands
 
     it 'can renders a String representation of itself' do
       expect(subject.to_s).to eq("#{sample_dotted} @ #{sample_origin}")
