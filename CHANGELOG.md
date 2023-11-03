@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+## [0.1.00] - 2023-11-03
+Version bump: the Earley recognizer is functional.
+
 ## [0.0.12] - 2023-11-02
 Added more tests.
 

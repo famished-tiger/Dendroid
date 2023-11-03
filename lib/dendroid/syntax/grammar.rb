@@ -17,47 +17,48 @@ module Dendroid
       # @return [Array<Dendroid::Syntax::GrmSymbol>] The terminal and non-terminal symbols.
       attr_reader :symbols
 
+      # A Hash that maps symbol names to their grammar symbols
+      # @return [Hash{String|Symbol => Dendroid::Syntax::GrmSymbol}]
+      attr_reader :name2symbol
+
       # The list of production rules for the language.
       # @return [Array<Dendroid::Syntax::Rule>] Array of rules for the grammar.
       attr_reader :rules
 
       # A Hash that maps symbol names to their grammar symbols
-      # @return [Hash{String => Dendroid::Syntax::GrmSymbol}]
-      attr_reader :name2symbol
-
-      # TODO: make nonterminal - rules one-to-one
-      # A Hash that maps symbol names to their grammar symbols
       # @return [Hash{Dendroid::Syntax::GrmSymbol => Dendroid::Syntax::Rule}]
-      attr_reader :nonterm2productions
+      attr_reader :nonterm2production
 
       # Constructor.
       # @param terminals [Array<Dendroid::Syntax::Terminal>]
       def initialize(terminals)
         @symbols = []
         @name2symbol = {}
+        @rules = []
+        @nonterm2production = {}
         add_terminals(terminals)
       end
 
-      # Add a rule to the grammar
+      # Add a rule to the grammar.
       # @param rule [Dendroid::Syntax::Rule]
       def add_rule(rule)
-        if @rules.nil?
-          @rules = []
-          @nonterm2productions = {}
+        if lhs_already_defined?(rule)
+          msg = "Non-terminal '#{rule.head}' is on left-hand side of more than one rule."
+          raise StandardError, msg
         end
-        # TODO: add test for duplicate productions
-        if nonterm2productions[rule.head]&.include? rule
-          raise StandardError, "Production rule '#{rule}' appears more than once in the grammar."
+        if duplicate_rule?(rule)
+          raise StandardError, "Duplicate production rule '#{rule}'."
         end
 
         add_symbol(rule.head)
         rule.nonterminals.each { |nonterm| add_symbol(nonterm) }
         rules << rule
-        nonterm2productions[rule.head] = [] unless nonterm2productions.include? rule.head
-        nonterm2productions[rule.head] << rule
+        nonterm2production[rule.head] = rule
       end
 
-      # Return the start symbol for the language
+      # Return the start symbol for the language, that is,
+      # the non-terminal symbol used to denote the top-level
+      # construct of the language being defined.
       # @return [Dendroid::Syntax::NonTerminal]
       def start_symbol
         rules.first.lhs
@@ -73,10 +74,14 @@ module Dendroid
 
       private
 
-      # rubocop: disable Metrics/AbcSize
-      # rubocop: disable Metrics/BlockNesting
-      # rubocop: disable Metrics/MethodLength
-      # rubocop: disable Metrics/PerceivedComplexity
+      def lhs_already_defined?(rule)
+        nonterm2production.include? rule.head
+      end
+
+      def duplicate_rule?(rule)
+        nonterm2production[rule.head]&.include? rule
+      end
+
       def add_terminals(terminals)
         terminals.each { |term| add_symbol(term) }
       end
@@ -89,6 +94,15 @@ module Dendroid
         name2symbol[symb.name.to_s] = symb
       end
 
+      def all_terminals
+        Set.new(symbols.select(&:terminal?))
+      end
+
+      def all_nonterminals
+        Set.new(symbols.reject(&:terminal?))
+      end
+
+      # Perform correctness checks of the grammar.
       def validate
         at_least_one_terminal
         are_terminals_referenced?
@@ -104,7 +118,6 @@ module Dendroid
       # Does the grammar contain at least one terminal symbol?
       def at_least_one_terminal
         found = symbols.any?(&:terminal?)
-
         return true if found
 
         err_msg = "Grammar doesn't contain any terminal symbol."
@@ -114,37 +127,28 @@ module Dendroid
       # Does every terminal symbol appear at least once
       # in a rhs of a production rule?
       def are_terminals_referenced?
-        all_terminals = Set.new(symbols.select(&:terminal?))
         terms_in_rhs = rules.reduce(Set.new) do |collected, prd|
           found = prd.terminals
           collected.merge(found)
         end
-        check_ok = all_terminals == terms_in_rhs
-        unless check_ok
-          unused_terms = all_terminals.difference(terms_in_rhs)
-          text = unused_terms.map(&:name).join("', '")
-          err_msg = "Terminal symbols '#{text}' never appear in production rules."
-          raise StandardError, err_msg
-        end
+        return true if all_terminals == terms_in_rhs
 
-        check_ok
+        unused_terms = all_terminals.difference(terms_in_rhs)
+        text = unused_terms.map(&:name).join("', '")
+        err_msg = "Terminal symbols '#{text}' never appear in production rules."
+        raise StandardError, err_msg
       end
 
       def are_nonterminals_rewritten?
-        all_nonterminals = Set.new(symbols.reject(&:terminal?))
-
         symbs_in_lhs = rules.reduce(Set.new) do |collected, prd|
           collected.add(prd.head)
         end
-        check_ok = all_nonterminals == symbs_in_lhs
-        unless check_ok
-          undefined_nterms = all_nonterminals.difference(symbs_in_lhs)
-          text = undefined_nterms.map(&:name).join("', '")
-          err_msg = "Non-terminal symbols '#{text}' never appear in head of any production rule."
-          raise StandardError, err_msg
-        end
+        return true if all_nonterminals == symbs_in_lhs
 
-        check_ok
+        undefined_nterms = all_nonterminals.difference(symbs_in_lhs)
+        text = undefined_nterms.map(&:name).join("', '")
+        err_msg = "Non-terminal symbols '#{text}' never appear in head of any production rule."
+        raise StandardError, err_msg
       end
 
       def are_symbols_reachable?
@@ -165,28 +169,31 @@ module Dendroid
         raise StandardError, err_msg
       end
 
+      # rubocop: disable Metrics/AbcSize
+      # rubocop: disable Metrics/CyclomaticComplexity
+      # rubocop: disable Metrics/PerceivedComplexity
+
       # Are all symbols reachable from start symbol?
+      # @return [Set<NonTerminal>] Set of unreachable symbols
       def unreachable_symbols
         backlog = [start_symbol]
         set_reachable = Set.new(backlog.dup)
 
-        begin
+        loop do
           reachable_sym = backlog.pop
-          prods = nonterm2productions[reachable_sym]
-          prods.each do |prd|
-            prd.rhs_symbols.each do |member|
-              unless member.terminal? || set_reachable.include?(member)
-                backlog.push(member)
-              end
-              set_reachable.add(member)
-            end
+          prd = nonterm2production[reachable_sym]
+          prd.rhs_symbols.each do |member|
+            backlog.push(member) unless member.terminal? || set_reachable.include?(member)
+            set_reachable.add(member)
           end
-        end until backlog.empty?
+          break if backlog.empty?
+        end
 
         all_symbols = Set.new(symbols)
         all_symbols - set_reachable
       end
 
+      # @return [Array<Dendroid::Syntax::NonTerminal>]
       def mark_non_productive_symbols
         prod_count = rules.size
         backlog = Set.new(0...prod_count)
@@ -214,11 +221,11 @@ module Dendroid
         nullable_found = false
         sym2seqs = {}
 
-        nonterm2productions.each_pair do |sym, prods|
-          if prods.any?(&:empty?)
+        nonterm2production.each_pair do |sym, prod|
+          if prod.empty?
             sym.nullable = nullable_found = true
           else
-            sym2seqs[sym] = prods.map(&:rhs).flatten
+            sym2seqs[sym] = prod.rhs
           end
         end
 
@@ -228,7 +235,7 @@ module Dendroid
             seqs.each { |sq| backlog[sq] = [0, sym] }
           end
 
-          begin
+          loop do
             seqs_done = []
             backlog.each_pair do |sq, (elem_index, lhs)|
               member = sq[elem_index]
@@ -256,18 +263,23 @@ module Dendroid
                 backlog.delete(sq)
               end
             end
-          end until backlog.empty? || seqs_done.empty?
+            break if backlog.empty? || seqs_done.empty?
+          end
         end
 
+        # symbols.each do |sym|
+        #   next if sym.terminal?
+        #
+        #   sym.nullable = false if sym.nullable.nil?
+        # end
         symbols.each do |sym|
-          next if sym.terminal?
+          next if sym.terminal? || sym.nullable?
 
-          sym.nullable = false if sym.nullable.nil?
+          sym.nullable = false
         end
       end
       # rubocop: enable Metrics/AbcSize
-      # rubocop: enable Metrics/BlockNesting
-      # rubocop: enable Metrics/MethodLength
+      # rubocop: enable Metrics/CyclomaticComplexity
       # rubocop: enable Metrics/PerceivedComplexity
     end # class
   end # module

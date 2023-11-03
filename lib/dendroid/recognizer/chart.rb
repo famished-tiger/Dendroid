@@ -19,10 +19,10 @@ module Dendroid
       attr_writer :success
 
       # @return [StandardError] The exception class in case of an error found by the recognizer
-      attr_accessor :failure_class
+      attr_reader :failure_class
 
       # @return [String] The error message
-      attr_accessor :failure_reason
+      attr_reader :failure_reason
 
       def_delegators :@item_sets, :[], :last, :size
 
@@ -49,6 +49,14 @@ module Dendroid
       # @return [Boolean]
       def successful?
         @success
+      end
+
+      # Set the error cause.
+      # @param exception_class [StandardError] Exception class
+      # @param message [String] Error message
+      def failure(exception_class, message)
+        @failure_class = exception_class
+        @failure_reason = message
       end
     end # class
   end # module

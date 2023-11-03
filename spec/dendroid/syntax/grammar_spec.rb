@@ -58,8 +58,8 @@ describe Dendroid::Syntax::Grammar do
       expect(subject.symbols).to eq(all_terminals)
     end
 
-    it 'ignores about productions after initialization' do
-      expect(subject.rules).to be_nil
+    it 'does not have rules after initialization' do
+      expect(subject.rules).to be_empty
     end
 
     it 'maps a terminal name to one GrmSymbol object' do
@@ -109,14 +109,15 @@ describe Dendroid::Syntax::Grammar do
       end
     end
 
-    it 'maps every non-terminal to its defining productions' do
+    it 'maps every non-terminal to its defining production' do
       rules = build_all_rules
       rules.each { |rl| subject.add_rule(rl) }
       %i[p s m t].each do |symb_name|
         symb = subject.name2symbol[symb_name]
         expected_prods = subject.rules.select { |prd| prd.head == symb }
-        related_prods = subject.nonterm2productions[symb]
-        expect(related_prods).to eq(expected_prods)
+        expect(expected_prods.size).to eq(1)
+        related_prod = subject.nonterm2production[symb]
+        expect(related_prod).to eq(expected_prods[0])
       end
     end
   end # context
@@ -230,8 +231,7 @@ describe Dendroid::Syntax::Grammar do
         # No terminal symbol explicitly declared => all symbols are non-terminals
 
         rule 'S' => 'A'
-        rule 'A' => 'a A c'
-        rule 'A' => 'b'
+        rule 'A' => ['a A c', 'b']
       end
 
       builder.grammar
@@ -243,8 +243,7 @@ describe Dendroid::Syntax::Grammar do
 
         # # Wrong: terminals 'd' and 'e' never appear in rules
         rule 'S' => 'A'
-        rule 'A' => 'a A c'
-        rule 'A' => 'b'
+        rule 'A' => ['a A c', 'b']
       end
 
       builder.grammar
@@ -282,13 +281,24 @@ describe Dendroid::Syntax::Grammar do
       builder.grammar
     end
 
+    def grm_multiple_defs
+      builder = Dendroid::GrmDSL::BaseGrmBuilder.new do
+        declare_terminals('a b c')
+
+        rule 'A' => %w[a B]
+        rule 'B' => ['b', '']
+        rule 'A' => 'c'
+      end
+
+      builder.grammar
+    end
+
     def duplicate_production
       builder = Dendroid::GrmDSL::BaseGrmBuilder.new do
-        declare_terminals('a', 'b', 'c')
+        declare_terminals('a')
 
         rule 'S' => 'A'
-        rule 'A' => ['a A c', 'b']
-        rule 'S' => 'A' # Duplicate rule
+        rule 'A' => %w[a a] # Duplicate alternatives
       end
 
       builder.grammar
@@ -329,8 +339,13 @@ describe Dendroid::Syntax::Grammar do
       expect { grm_undefined_nterm }.to raise_error(StandardError, err_msg)
     end
 
+    it 'raises an error when a non-terminal is defined multiple times' do
+      err_msg = "Non-terminal 'A' is on left-hand side of more than one rule."
+      expect { grm_multiple_defs }.to raise_error(StandardError, err_msg)
+    end
+
     it 'raises an error when a production is duplicated' do
-      err_msg = "Production rule 'S => A' appears more than once in the grammar."
+      err_msg = 'Duplicate alternatives: A => a'
       expect { duplicate_production }.to raise_error(StandardError, err_msg)
     end
 

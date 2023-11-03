@@ -31,8 +31,7 @@ module Dendroid
         tok = tokenizer.next_token
         if tok.nil? && !grm_analysis.grammar.start_symbol.nullable?
           chart = new_chart
-          chart.failure_class = StandardError
-          chart.failure_reason = 'Error: Input may not be empty nor blank.'
+          chart.failure(StandardError, 'Error: Input may not be empty nor blank.')
           chart
         else
           earley_parse(tok)
@@ -62,7 +61,7 @@ module Dendroid
 
           rank += 1 if advance
           break if eos_reached && !advance
-          break if !advance
+          break unless advance
         end
 
         determine_outcome(chart, tokens)
@@ -74,13 +73,10 @@ module Dendroid
       def new_chart
         top_symbol = grm_analysis.grammar.start_symbol
 
-        # Reminder: there might be multiple rules for the start symbol
-        prods = grm_analysis.grammar.nonterm2productions[top_symbol]
+        prd = grm_analysis.grammar.nonterm2production[top_symbol]
         chart = Chart.new
-        prods.each do |prd|
-          seed_items = prd.predicted_items
-          seed_items.each { |item| chart.seed_last_set(EItem.new(item, 0)) }
-        end
+        seed_items = prd.predicted_items
+        seed_items.each { |item| chart.seed_last_set(EItem.new(item, 0)) }
 
         chart
       end
@@ -103,12 +99,10 @@ module Dendroid
 
         if entry.completed?
           completer(chart, entry, rank, tokens, mode)
+        elsif entry.next_symbol.terminal?
+          advance = scanner(chart, entry, rank, tokens)
         else
-          if entry.next_symbol.terminal?
-            advance = scanner(chart, entry, rank, tokens)
-          else
-            predictor(chart, entry, rank, tokens, mode, predicted_symbols)
-          end
+          predictor(chart, entry, rank, tokens, mode, predicted_symbols)
         end
 
         advance
@@ -131,31 +125,28 @@ module Dendroid
           predicted.add(next_symbol)
         end
 
-        prods = grm_analysis.symbol2productions[next_symbol]
         curr_set = chart[rank]
         next_token = tokens[rank]
-        prods.each do |prd|
-          entry_items = prd.predicted_items
-          entry_items.each do |entry|
-            member = entry.next_symbol
-            if member&.terminal?
-              next unless next_token
-              next if (member.name != next_token.terminal) && mode == :genuine
-            end
-
-            new_item = EItem.new(entry, rank)
-            curr_set.add_item(new_item)
+        prd = grm_analysis.symbol2production(next_symbol)
+        entry_items = prd.predicted_items
+        entry_items.each do |entry|
+          member = entry.next_symbol
+          if member&.terminal?
+            next unless next_token
+            next if (member.name != next_token.terminal) && mode == :genuine
           end
-        end
 
+          new_item = EItem.new(entry, rank)
+          curr_set.add_item(new_item)
+        end
         # Use trick from paper John Aycock and R. Nigel Horspool: "Practical Earley Parsing"
-        if next_symbol.nullable?
-          next_item = grm_analysis.next_item(item.dotted_item)
-          if next_item
-            new_item = EItem.new(next_item, item.origin)
-            curr_set.add_item(new_item)
-          end
-        end
+        return unless next_symbol.nullable?
+
+        next_item = grm_analysis.next_item(item.dotted_item)
+        return unless next_item
+
+        new_item = EItem.new(next_item, item.origin)
+        curr_set.add_item(new_item)
       end
 
       # procedure SCANNER((A → α•aβ, j), k, words)
@@ -219,13 +210,11 @@ module Dendroid
         success = false
         if chart.size == tokens.size + 1
           top_symbol = grm_analysis.grammar.start_symbol
-          top_rules = grm_analysis.grammar.nonterm2productions[top_symbol]
-          final_items = top_rules.reduce([]) do |items, rule|
-            items.concat(rule.reduce_items)
-          end
+          top_rule = grm_analysis.grammar.nonterm2production[top_symbol]
+          final_items = top_rule.reduce_items
           last_set = chart.item_sets.last
           last_set.each do |entry|
-            next if ((!entry.origin.zero?) || !final_items.include?(entry.dotted_item))
+            next if !entry.origin.zero? || !final_items.include?(entry.dotted_item)
 
             success = true
           end
@@ -239,37 +228,35 @@ module Dendroid
             offending_token = tokens[chart.size - 1]
             pos = offending_token.position
             (line, col) = [pos.lineno, pos.column]
-            last_set = chart.last
-            terminals = last_set.items.reduce([]) do |result, ent|
-              result << ent.next_symbol if ent.pre_scan?
-              result
-            end
-            terminals.uniq!
+            terminals = expected_terminals(chart)
             prefix = "Syntax error at or near token line #{line}, column #{col} >>>#{offending_token.source}<<<"
             expectation = terminals.size == 1 ? terminals[0].name.to_s : "one of: [#{terminals.map(&:name).join(', ')}]"
             err_msg = "#{prefix} Expected #{expectation}, found a #{offending_token.terminal} instead."
-            chart.failure_class = StandardError
-            chart.failure_reason = err_msg
+            chart.failure(StandardError, err_msg)
           elsif chart.size == tokens.size + 1
             # EOS unexpected...
             last_token = tokens.last
             pos = last_token.position
             (line, col) = [pos.lineno, pos.column]
-            last_set = chart.last
-            terminals = last_set.items.reduce([]) do |result, ent|
-              result << ent.next_symbol if ent.pre_scan?
-              result
-            end
-            terminals.uniq!
-
+            terminals = expected_terminals(chart)
             prefix = "Line #{line}, column #{col}: Premature end of input after '#{last_token.source}'"
             expectation = terminals.size == 1 ? terminals[0].name.to_s : "one of: [#{terminals.map(&:name).join(', ')}]"
             err_msg = "#{prefix}, expected: #{expectation}."
-            chart.failure_class = StandardError
-            chart.failure_reason = err_msg
+            chart.failure(StandardError, err_msg)
           end
         end
         chart.success = success
+      end
+
+      def expected_terminals(chart)
+        last_set = chart.last
+        terminals = last_set.items.reduce([]) do |result, ent|
+          result << ent.next_symbol if ent.pre_scan?
+          result
+        end
+        terminals.uniq!
+
+        terminals
       end
 
       def replay_last_set(chart, tokens)

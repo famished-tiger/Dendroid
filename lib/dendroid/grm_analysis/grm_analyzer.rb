@@ -13,7 +13,6 @@ module Dendroid
       attr_reader :grammar
       attr_reader :items
       attr_reader :production2items
-      attr_reader :symbol2productions
 
       # @return [Dendroid::Syntax::Terminal] The pseudo-terminal `__epsilon` (for empty string)
       attr_reader :epsilon
@@ -37,7 +36,6 @@ module Dendroid
         @grammar = aGrammar
         @items = []
         @production2items = {}
-        @symbol2productions = {}
         @epsilon = Syntax::Terminal.new(:__epsilon)
         @endmarker = Syntax::Terminal.new(:"$$")
         @first_sets = {}
@@ -56,14 +54,14 @@ module Dendroid
         prod.next_item(aDottedItem)
       end
 
+      def symbol2production(sym)
+        grammar.nonterm2production[sym]
+      end
+
       private
 
       def build_dotted_items
         grammar.rules.each do |prod|
-          lhs = prod.head
-          symbol2productions[lhs] = [] unless symbol2productions.include? lhs
-          symbol2productions[lhs] << prod
-          # production2items[prod] = []
           mixin = prod.choice? ? ChoiceItems : ProductionItems
           prod.extend(mixin)
           prod.build_items
@@ -76,33 +74,31 @@ module Dendroid
       def build_first_sets
         initialize_first_sets
 
-        begin
+        loop do
           changed = false
           grammar.rules.each do |prod|
             head = prod.head
             first_head = first_sets[head]
             pre_first_size = first_head.size
-            if prod.choice?
-              prod.alternatives.each do |alt|
-                first_head.merge(sequence_first(alt.members))
-              end
-            else
-              first_head.merge(sequence_first(prod.body.members))
+            prod.rhs.each do |seq|
+              first_head.merge(sequence_first(seq.members))
             end
             changed = true if first_head.size > pre_first_size
           end
-        end until !changed
+          break unless changed
+        end
       end
 
       def initialize_first_sets
         grammar.symbols.each do |symb|
-          if symb.terminal?
-            first_sets[symb] = Set.new([symb])
-          elsif symb.nullable?
-            first_sets[symb] = Set.new([epsilon])
-          else
-            first_sets[symb] = Set.new
-          end
+          set_arg = if symb.terminal?
+                      [symb]
+                    elsif symb.nullable?
+                      [epsilon]
+                    else
+                      nil
+                    end
+          first_sets[symb] = Set.new(set_arg)
         end
       end
 
@@ -122,43 +118,11 @@ module Dendroid
       def build_follow_sets
         initialize_follow_sets
 
-        begin
+        loop do
           changed = false
           grammar.rules.each do |prod|
-            if prod.choice?
-              prod.alternatives.each do |alt|
-                body = alt.members
-                next if body.empty?
-
-                head = prod.head
-                head_follow = follow_sets[head]
-                # trailer = Set.new
-                last = true
-                last_index = body.size - 1
-                last_index.downto(0) do |i|
-                  symbol = body[i]
-                  next if symbol.terminal?
-
-                  follow_symbol = follow_sets[symbol]
-                  size_before = follow_symbol.size
-                  if last
-                    # Rule: if last non-terminal member (symbol) is nullable
-                    # then add FOLLOW(head) to FOLLOW(symbol)
-                    follow_sets[symbol].merge(head_follow) if symbol.nullable?
-                    last = false
-                  else
-                    symbol_seq = body.slice(i + 1, last_index - i)
-                    trailer_first = sequence_first(symbol_seq)
-                    contains_epsilon = trailer_first.include? epsilon
-                    trailer_first.delete(epsilon) if contains_epsilon
-                    follow_sets[symbol].merge(trailer_first)
-                    follow_sets[symbol].merge(head_follow) if contains_epsilon
-                  end
-                  changed = true if follow_sets[symbol].size > size_before
-                end
-              end
-            else
-              body = prod.body.members
+            prod.rhs.each do |alt|
+              body = alt.members
               next if body.empty?
 
               head = prod.head
@@ -189,7 +153,8 @@ module Dendroid
               end
             end
           end
-        end until !changed
+          break unless changed
+        end
       end
 
       def initialize_follow_sets
