@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+## [0.2.00] - 2023-12-16
+Version bump: Very crude parser implementation (generate shared parse forests in case of ambiguity).
+
 ## [0.1.00] - 2023-11-03
 Version bump: the Earley recognizer is functional.
 
