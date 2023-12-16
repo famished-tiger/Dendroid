@@ -3,8 +3,7 @@
 require_relative '..\syntax\terminal'
 require_relative '..\syntax\non_terminal'
 require_relative '..\syntax\symbol_seq'
-require_relative '..\syntax\production'
-require_relative '..\syntax\choice'
+require_relative '..\syntax\rule'
 require_relative '..\syntax\grammar'
 
 module Dendroid
@@ -90,10 +89,10 @@ module Dendroid
         raw_rhs = productionRuleRepr.values.first
 
         if raw_rhs.is_a? String
-          new_prod = Dendroid::Syntax::Production.new(lhs, build_symbol_seq(raw_rhs))
+          new_prod = Dendroid::Syntax::Rule.new(lhs, [build_symbol_seq(raw_rhs)])
         else
           rhs = raw_rhs.map { |raw| build_symbol_seq(raw) }
-          new_prod = Dendroid::Syntax::Choice.new(lhs, rhs)
+          new_prod = Dendroid::Syntax::Rule.new(lhs, rhs)
         end
         rules << new_prod
         new_prod

@@ -211,7 +211,7 @@ module Dendroid
           backlog.subtract(to_remove)
         end
 
-        backlog.each { |i| rules[i].non_productive }
+        # backlog.each { |i| rules[i].non_productive }
         non_productive = symbols.reject(&:productive?)
         non_productive.each { |symb| symb.productive = false }
         non_productive

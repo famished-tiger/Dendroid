@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
-require_relative '../grm_analysis/production_items'
-require_relative '../grm_analysis/choice_items'
+require_relative '../grm_analysis/rule_items.rb'
 
 module Dendroid
   module GrmAnalysis
@@ -62,8 +61,7 @@ module Dendroid
 
       def build_dotted_items
         grammar.rules.each do |prod|
-          mixin = prod.choice? ? ChoiceItems : ProductionItems
-          prod.extend(mixin)
+          prod.extend(RuleItems)
           prod.build_items
           rule_items = prod.items.flatten
           items.concat(rule_items)

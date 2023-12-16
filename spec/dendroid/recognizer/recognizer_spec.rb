@@ -51,7 +51,7 @@ describe Dendroid::Recognizer::Recognizer do
         'm => t . @ 0',
         's => m . @ 0',
         # 'm => m . STAR t @ 0',
-        'p => s . @ 0',
+        'p => s . @ 0', # Can be ruled out (next token != eos)
         's => s . PLUS m @ 0'
       ]
       set2 = [ # 2 + . 3 * 4'
@@ -65,7 +65,7 @@ describe Dendroid::Recognizer::Recognizer do
         'm => t . @ 2',
         's => s PLUS m . @ 0',
         'm => m . STAR t @ 2',
-        'p => s . @ 0'
+        'p => s . @ 0' # Can be ruled out (next token != eos)
         # 's => s . PLUS m @ 0'
       ]
       set4 = [ # 2 + 3 * . 4'
@@ -422,6 +422,55 @@ describe Dendroid::Recognizer::Recognizer do
       comp_expected_actuals(chart, expectations)
     end
 
+
+    it 'accepts an input with multiple levels of ambiguity' do
+      recognizer = described_class.new(grammar_l8, tokenizer_l8)
+      chart = recognizer.run('x x x x')
+      expect(chart).to be_successful
+
+      set0 = [ # . x x x x
+        'S => . S S @ 0',
+        'S => . x @ 0'
+      ]
+      set1 = [ # x . x x x
+        'S => x . @ 0',
+        'S => S . S @ 0',
+        'S => . S S @ 1',
+        'S => . x @ 1'
+      ]
+      set2 = [ # x x . x x
+        'S => x . @ 1',
+        'S => S S . @ 0',
+        'S => S . S @ 1',
+        'S => S . S @ 0',
+        'S => . S S @ 2',
+        'S => . x @ 2'
+      ]
+      set3 = [ # x x x . x
+        'S => x . @ 2',
+        'S => S S . @ 1',
+        'S => S S . @ 0',
+        'S => S . S @ 2',
+        'S => S . S @ 1',
+        'S => S . S @ 0',
+        'S => . S S @ 3',
+        'S => . x @ 3'
+      ]
+      set4 = [ # x x x x .
+        'S => x . @ 3',
+        'S => S S . @ 2',
+        'S => S S . @ 1',
+        'S => S S . @ 0', # Success entry
+        'S => S . S @ 3',
+        'S => S . S @ 2',
+        'S => S . S @ 1',
+        'S => S . S @ 0',
+        'S => . S S @ 4'
+      ]
+      expectations = [set0, set1, set2, set3, set4]
+      comp_expected_actuals(chart, expectations)
+    end
+
     it 'swallows the input from an infinite ambiguity grammar' do
       recognizer = described_class.new(grammar_l9, tokenizer_l9)
       chart = recognizer.run('x x x')
@@ -441,7 +490,8 @@ describe Dendroid::Recognizer::Recognizer do
         'S => . S S @ 1',
         'S => . @ 1',
         'S => . x @ 1',
-        'S => S . S @ 1'
+        'S => S . S @ 1',
+        'S => S S . @ 1'
       ]
       set2 = [ # x x . x
         'S => x . @ 1',
@@ -452,7 +502,8 @@ describe Dendroid::Recognizer::Recognizer do
         'S => . S S @ 2',
         'S => . @ 2',
         'S => . x @ 2',
-        'S => S . S @ 2'
+        'S => S . S @ 2',
+        'S => S S . @ 2'
       ]
       set3 = [ # x x x .
         'S => x . @ 2',
@@ -465,7 +516,8 @@ describe Dendroid::Recognizer::Recognizer do
         'S => . S S @ 3',
         'S => . @ 3',
         # 'S => . x @ 3',
-        'S => S . S @ 3'
+        'S => S . S @ 3',
+        'S => S S . @ 3'
       ]
       expectations = [set0, set1, set2, set3]
       comp_expected_actuals(chart, expectations)

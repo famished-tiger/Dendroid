@@ -39,7 +39,7 @@ module Dendroid
       end
 
       # Run the Earley algorithm
-      # @param initial_token [Dednroid::Lexical::Token]
+      # @param initial_token [Dendroid::Lexical::Token]
       def earley_parse(initial_token)
         chart = new_chart
         tokens = [initial_token]
@@ -64,7 +64,8 @@ module Dendroid
           break unless advance
         end
 
-        determine_outcome(chart, tokens)
+        chart.tokens = tokens
+        determine_outcome(chart)
         chart
       end
 
@@ -76,7 +77,11 @@ module Dendroid
         prd = grm_analysis.grammar.nonterm2production[top_symbol]
         chart = Chart.new
         seed_items = prd.predicted_items
-        seed_items.each { |item| chart.seed_last_set(EItem.new(item, 0)) }
+        seed_items.each do |item|
+          entry = EItem.new(item, 0)
+          entry.algo = :predictor
+          chart.seed_last_set(entry)
+        end
 
         chart
       end
@@ -117,27 +122,26 @@ module Dendroid
       #   Error case: next actual token matches none of the expected tokens.
       def predictor(chart, item, rank, tokens, mode, predicted_symbols)
         next_symbol = item.next_symbol
-        if mode == :genuine
-          predicted_symbols << Set.new if rank == predicted_symbols.size
-          predicted = predicted_symbols[rank]
-          return if predicted.include?(next_symbol)
-
-          predicted.add(next_symbol)
-        end
+        # if mode == :genuine
+        #   predicted_symbols << Set.new if rank == predicted_symbols.size
+        #   predicted = predicted_symbols[rank]
+        #   return if predicted.include?(next_symbol)
+        #
+        #   predicted.add(next_symbol)
+        # end
 
         curr_set = chart[rank]
         next_token = tokens[rank]
         prd = grm_analysis.symbol2production(next_symbol)
         entry_items = prd.predicted_items
+        added = []
         entry_items.each do |entry|
           member = entry.next_symbol
           if member&.terminal?
             next unless next_token
             next if (member.name != next_token.terminal) && mode == :genuine
           end
-
-          new_item = EItem.new(entry, rank)
-          curr_set.add_item(new_item)
+          added << add_item(curr_set, entry, rank, item, :predictor)
         end
         # Use trick from paper John Aycock and R. Nigel Horspool: "Practical Earley Parsing"
         return unless next_symbol.nullable?
@@ -145,8 +149,9 @@ module Dendroid
         next_item = grm_analysis.next_item(item.dotted_item)
         return unless next_item
 
-        new_item = EItem.new(next_item, item.origin)
-        curr_set.add_item(new_item)
+        special = add_item(curr_set, next_item, item.origin, nil, :predictor)
+        # special = add_item(curr_set, next_item, item.origin, added.shift, :predictor)
+        # added.each { |e|  special.add_predecessor(e) }
       end
 
       # procedure SCANNER((A → α•aβ, j), k, words)
@@ -161,8 +166,7 @@ module Dendroid
           new_rank = rank + 1
           chart.append_new_set if chart[new_rank].nil?
           next_dotted_item = grm_analysis.next_item(dit)
-          new_item = EItem.new(next_dotted_item, scan_item.origin)
-          chart[new_rank].add_item(new_item)
+          add_item(chart[new_rank], next_dotted_item, scan_item.origin, scan_item, :scanner)
           advance = true
         end
 
@@ -190,8 +194,7 @@ module Dendroid
             next if member.name != next_token.terminal
           end
 
-          new_item = EItem.new(return_item, call_item.origin)
-          curr_set.add_item(new_item)
+          add_item(curr_set, return_item, call_item.origin, item, :completer)
         end
       end
 
@@ -206,8 +209,18 @@ module Dendroid
         end
       end
 
-      def determine_outcome(chart, tokens)
+      def add_item(item_set, dotted_item, origin, predecessor, procedure)
+        new_item = EItem.new(dotted_item, origin)
+        added = item_set.add_item(new_item)
+        added.add_predecessor(predecessor) if predecessor
+        new_item.algo = procedure
+
+        added
+      end
+
+      def determine_outcome(chart)
         success = false
+        tokens = chart.tokens
         if chart.size == tokens.size + 1
           top_symbol = grm_analysis.grammar.start_symbol
           top_rule = grm_analysis.grammar.nonterm2production[top_symbol]

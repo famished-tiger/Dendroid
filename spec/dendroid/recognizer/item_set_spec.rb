@@ -4,7 +4,7 @@ require_relative '../../spec_helper'
 require_relative '../../../lib/dendroid/syntax/terminal'
 require_relative '../../../lib/dendroid/syntax/non_terminal'
 require_relative '../../../lib/dendroid/syntax/symbol_seq'
-require_relative '../../../lib/dendroid/syntax/production'
+require_relative '../../../lib/dendroid/syntax/rule'
 require_relative '../../../lib/dendroid/grm_analysis/dotted_item'
 require_relative '../../../lib/dendroid/recognizer/e_item'
 require_relative '../../../lib/dendroid/recognizer/item_set'
@@ -15,11 +15,11 @@ describe Dendroid::Recognizer::ItemSet do
   let(:expr_symb) { Dendroid::Syntax::NonTerminal.new('expression') }
   let(:rhs) { Dendroid::Syntax::SymbolSeq.new([num_symb, plus_symb, num_symb]) }
   let(:empty_body) { Dendroid::Syntax::SymbolSeq.new([]) }
-  let(:prod) { Dendroid::Syntax::Production.new(expr_symb, rhs) }
-  let(:empty_prod) { Dendroid::Syntax::Production.new(expr_symb, empty_body) }
-  let(:sample_dotted) { Dendroid::GrmAnalysis::DottedItem.new(prod, 1) }
+  let(:prod) { Dendroid::Syntax::Rule.new(expr_symb, [rhs]) }
+  let(:empty_prod) { Dendroid::Syntax::Rule.new(expr_symb, [empty_body]) }
+  let(:sample_dotted) { Dendroid::GrmAnalysis::DottedItem.new(prod, 1, 0) }
   let(:sample_origin) { 3 }
-  let(:other_dotted) { Dendroid::GrmAnalysis::DottedItem.new(empty_prod, 0) }
+  let(:other_dotted) { Dendroid::GrmAnalysis::DottedItem.new(empty_prod, 0, 0) }
   let(:first_element) { Dendroid::Recognizer::EItem.new(sample_dotted, sample_origin) }
   let(:second_element) { Dendroid::Recognizer::EItem.new(other_dotted, 5) }
 
@@ -37,15 +37,23 @@ describe Dendroid::Recognizer::ItemSet do
 
   context 'Provided services:' do
     it 'adds a new element' do
+      added = subject.add_item(first_element)
+      expect(subject.size).to eq(1)
+      expect(added).to eq(first_element)
+
+      # Trying a second time with itentical item, doesn't change the set
       subject.add_item(first_element)
       expect(subject.size).to eq(1)
 
-      # Trying a second time, doesn't change the set
-      subject.add_item(first_element)
+      # Trying a third time with equal item, doesn't change the set
+      similar = first_element.dup
+      added = subject.add_item(similar)
       expect(subject.size).to eq(1)
+      expect(added).to eq(first_element)
 
-      subject.add_item(second_element)
+      added = subject.add_item(second_element)
       expect(subject.size).to eq(2)
+      expect(added).to eq(second_element)
     end
 
     it 'can render a String representation of itself' do

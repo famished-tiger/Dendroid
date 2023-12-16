@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
+require 'weakref'
+
 module Dendroid
-  # This module contains classes that from the analysis of grammar rules help to build objects
-  # needed by a recognizer or a parser for the language.
   module GrmAnalysis
     # For a given production rule, a dotted item represents a recognition state.
     # The dot partitions the rhs of the rule in two parts:
@@ -20,42 +20,40 @@ module Dendroid
     # An item with a dot in front of a terminal is called a shift item.
     # An item with the dot not at the beginning is sometimes referred to as a kernel item
     class DottedItem
-      # Reference to the production rule
+      # (Weak) reference to the production rule
       # @return [Dendroid::Syntax::Production]
       attr_reader :rule
 
       # @return [Integer] the dot position
       attr_reader :position
 
+      # @return [Integer] the alternative number
+      attr_reader :alt_index
+
       # Constructor.
-      # @param aRule [Dendroid::Syntax::Rule]
+      # @param aChoice [Dendroid::Syntax::Rule]
       # @param aPosition [Integer] Position of the dot in rhs of production.
-      def initialize(aRule, aPosition)
-        @rule = aRule
+      # @param index [Integer] the rank of the alternative at hand
+      def initialize(aChoice, aPosition, index)
+        @alt_index = index
+        @rule = WeakRef.new(aChoice)
         @position = valid_position(aPosition)
       end
 
-      # Return a String representation of the dotted item.
+      # Return a String representation of the alternative item.
       # @return [String]
       def to_s
-        rhs_names = rule.body.map(&:to_s)
+        rhs_names = rule.alternatives[alt_index].members.map(&:to_s)
         dotted_rhs = rhs_names.insert(position, '.')
         "#{rule.head} => #{dotted_rhs.join(' ')}"
       end
 
-      # Indicate whether the rhs of the rule is empty
+      alias inspect to_s
+
+      # Indicate whether the rhs of the alternative is empty
       # @return [Boolean]
       def empty?
-        rule.empty?
-      end
-
-      # Terminology inspired from Luger's book
-      # @return [Symbol] one of: :initial, :initial_and_completed, :partial, :completed
-      def state
-        return :initial_and_completed if empty?
-        return :initial if position.zero?
-
-        position == rule.body.size ? :completed : :partial
+        rule.alternatives[alt_index].empty?
       end
 
       # Indicate whether the dot is at the start of rhs
@@ -64,28 +62,46 @@ module Dendroid
         position.zero? || empty?
       end
 
-      # Indicate whether the dot is at the end of rhs
-      # @return [Boolean]
-      def final_pos?
-        empty? || position == rule.body.size
-      end
-
-      alias completed? final_pos?
-
       # Indicate the dot isn't at start nor at end position
       # @return [Boolean]
       def intermediate_pos?
         return false if empty? || position.zero?
 
-        position < rule.body.size
+        position < rule.alternatives[alt_index].size
       end
+
+      # Indicate whether the dot is at the start of rhs
+      # @return [Boolean]
+      def final_pos?
+        empty? || position == rule.alternatives[alt_index].size
+      end
+
+      alias completed? final_pos?
+
+      # Terminology inspired from Luger's book
+      # @return [Symbol] one of: :initial, :initial_and_completed, :partial, :completed
+      def state
+        return :initial_and_completed if empty?
+        return :initial if position.zero?
+
+        position == rule.alternatives[alt_index].size ? :completed : :partial
+      end
+
 
       # Return the symbol right after the dot (if any)
       # @return [Dendroid::Syntax::GrmSymbol, NilClass]
       def next_symbol
         return nil if empty? || completed?
 
-        rule.body[position]
+        rule.alternatives[alt_index].members[position]
+      end
+
+      # Return the symbol right before the dot (if any)
+      # @return [Dendroid::Syntax::GrmSymbol, NilClass]
+      def prev_symbol
+        return nil if empty? || position.zero?
+
+        rule.alternatives[alt_index].members[position - 1]
       end
 
       # Check whether the given symbol is the same as after the dot.
@@ -99,7 +115,7 @@ module Dendroid
       end
 
       # Check whether the dotted item is a shift item.
-      # In other words, it expects a terminal to be next symbol
+      # In other words, it expects a terminal to be the next symbol
       # @return [Boolean]
       def pre_scan?
         next_symbol&.terminal?
@@ -112,13 +128,13 @@ module Dendroid
       def ==(other)
         return true if eql?(other)
 
-        (position == other.position) && rule.eql?(other.rule)
+        (position == other.position) && rule.eql?(other.rule) && (alt_index == other.alt_index)
       end
 
       private
 
       def valid_position(aPosition)
-        raise StandardError if aPosition.negative? || aPosition > rule.body.size
+        raise StandardError if aPosition.negative? || aPosition > rule.alternatives[alt_index].size
 
         aPosition
       end

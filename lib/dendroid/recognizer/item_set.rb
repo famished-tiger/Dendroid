@@ -15,10 +15,15 @@ module Dendroid
         @items = []
       end
 
-      # Add an Early item to the set
+      # Add an Earley item to the set if not yet present.
       # @param anItem [Recognizer::EItem]
+      # @return [Recognizer::EItem] the item in the set
       def add_item(anItem)
-        @items << anItem unless items.include? anItem
+        idx = items.find_index anItem
+        return items[idx] if idx
+
+        @items << anItem
+        anItem
       end
 
       # Find the items that expect a given grammar symbol

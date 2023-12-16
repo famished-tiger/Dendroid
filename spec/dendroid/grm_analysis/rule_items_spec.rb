@@ -4,11 +4,10 @@ require_relative '..\..\spec_helper'
 require_relative '..\..\..\lib\dendroid\syntax\terminal'
 require_relative '..\..\..\lib\dendroid\syntax\non_terminal'
 require_relative '..\..\..\lib\dendroid\syntax\symbol_seq'
-require_relative '..\..\..\lib\dendroid\syntax\choice'
-# require_relative '..\..\..\lib\dendroid\grm_analysis\alternative_item'
-require_relative '..\..\..\lib\dendroid\grm_analysis\choice_items'
+require_relative '..\..\..\lib\dendroid\syntax\rule'
+require_relative '..\..\..\lib\dendroid\grm_analysis\rule_items'
 
-describe Dendroid::GrmAnalysis::ChoiceItems do
+describe Dendroid::GrmAnalysis::RuleItems do
   let(:num_symb) { Dendroid::Syntax::Terminal.new('NUMBER') }
   let(:plus_symb) { Dendroid::Syntax::Terminal.new('PLUS') }
   let(:star_symb) { Dendroid::Syntax::Terminal.new('STAR') }
@@ -17,8 +16,8 @@ describe Dendroid::GrmAnalysis::ChoiceItems do
   let(:alt2) { Dendroid::Syntax::SymbolSeq.new([num_symb, star_symb, num_symb]) }
   let(:alt3) { Dendroid::Syntax::SymbolSeq.new([]) }
   subject do
-    choice = Dendroid::Syntax::Choice.new(expr_symb, [alt1, alt2, alt3])
-    choice.extend(Dendroid::GrmAnalysis::ChoiceItems)
+    choice = Dendroid::Syntax::Rule.new(expr_symb, [alt1, alt2, alt3])
+    choice.extend(Dendroid::GrmAnalysis::RuleItems)
     choice.build_items
     choice
   end

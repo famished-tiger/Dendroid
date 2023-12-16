@@ -211,6 +211,7 @@ module SampleGrammars
   end
 
   def grammar_l10
+    # Grammar with left recursive rule
     builder = Dendroid::GrmDSL::BaseGrmBuilder.new do
       declare_terminals('a')
 
@@ -230,6 +231,7 @@ module SampleGrammars
 
   def grammar_l11
     builder = Dendroid::GrmDSL::BaseGrmBuilder.new do
+      # Grammar with right-recursive rule
       declare_terminals('a')
 
       rule 'A' => ['a A', '']

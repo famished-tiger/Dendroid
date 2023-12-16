@@ -4,7 +4,7 @@ require_relative '../../spec_helper'
 require_relative '../../../lib/dendroid/syntax/terminal'
 require_relative '../../../lib/dendroid/syntax/non_terminal'
 require_relative '../../../lib/dendroid/syntax/symbol_seq'
-require_relative '../../../lib/dendroid/syntax/production'
+require_relative '../../../lib/dendroid/syntax/rule'
 require_relative '../../../lib/dendroid/grm_analysis/dotted_item'
 require_relative '../../../lib/dendroid/recognizer/e_item'
 
@@ -14,10 +14,10 @@ describe Dendroid::Recognizer::EItem do
   let(:expr_symb) { Dendroid::Syntax::NonTerminal.new('expression') }
   let(:rhs) { Dendroid::Syntax::SymbolSeq.new([num_symb, plus_symb, num_symb]) }
   let(:empty_body) { Dendroid::Syntax::SymbolSeq.new([]) }
-  let(:prod) { Dendroid::Syntax::Production.new(expr_symb, rhs) }
-  let(:empty_prod) { Dendroid::Syntax::Production.new(expr_symb, empty_body) }
-  let(:sample_dotted) { Dendroid::GrmAnalysis::DottedItem.new(prod, 1) }
-  let(:other_dotted) { Dendroid::GrmAnalysis::DottedItem.new(empty_prod, 0) }
+  let(:prod) { Dendroid::Syntax::Rule.new(expr_symb, [rhs]) }
+  let(:empty_prod) { Dendroid::Syntax::Rule.new(expr_symb, [empty_body]) }
+  let(:sample_dotted) { Dendroid::GrmAnalysis::DottedItem.new(prod, 1, 0) }
+  let(:other_dotted) { Dendroid::GrmAnalysis::DottedItem.new(empty_prod, 0, 0) }
   let(:sample_origin) { 3 }
 
   subject { described_class.new(sample_dotted, sample_origin) }

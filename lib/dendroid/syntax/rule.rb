@@ -2,28 +2,60 @@
 
 module Dendroid
   module Syntax
-    # In a context-free grammar, a rule has its left-hand side (LHS)
-    # that consists solely of one non-terminal symbol.
-    # and the right-hand side (RHS) consists of one or more sequence of symbols.
-    # The symbols in RHS can be either terminal or non-terminal symbols.
-    # The rule stipulates that the LHS is equivalent to the RHS,
-    # in other words every occurrence of the LHS can be substituted to
-    # corresponding RHS.
+    # A specialization of the Rule class.
+    # A choice is a rule with multiple rhs
     class Rule
       # @return [Dendroid::Syntax::NonTerminal] The left-hand side of the rule.
       attr_reader :head
       alias lhs head
 
-      # Create a Rule instance.
-      # @param lhs [Dendroid::Syntax::NonTerminal] The left-hand side of the rule.
-      def initialize(lhs)
-        @head = valid_head(lhs)
+      # @return [Array<Dendroid::Syntax::SymbolSeq>]
+      attr_reader :alternatives
+
+      # Create a Choice instance.
+      # @param theLhs [Dendroid::Syntax::NonTerminal] The left-hand side of the rule.
+      # @param alt [Array<Dendroid::Syntax::SymbolSeq>] the alternatives (each as a sequence of symbols).
+      def initialize(theLhs, alt)
+        @head = valid_head(theLhs)
+        @alternatives = valid_alternatives(alt)
       end
 
-      # Return the text representation of the rule
+      # Return the text representation of the choice
       # @return [String]
       def to_s
-        head.to_s
+        "#{head} => #{alternatives.join(' | ')}"
+      end
+
+      # Predicate method to check whether the choice rule body is productive.
+      # It is productive when at least one of its alternative is productive.
+      # @return [Boolean]
+      def productive?
+        productive_alts = alternatives.select(&:productive?)
+        return false if productive_alts.empty?
+
+        @productive = Set.new(productive_alts)
+        head.productive = true
+      end
+
+      # Predicate method to check whether the rule has at least one empty alternative.
+      # @return [Boolean]
+      def empty?
+        alternatives.any?(&:empty?)
+      end
+
+      # Returns an array with the symbol sequence of its alternatives
+      # @return [Array<Dendroid::Syntax::SymbolSeq>]
+      def rhs
+        alternatives
+      end
+
+      # Equality operator
+      # Two production rules are equal when their head and alternatives are equal.
+      # @return [Boolean]
+      def ==(other)
+        return true if equal?(other)
+
+        (head == other.head) && (alternatives == other.alternatives)
       end
 
       # The set of all grammar symbols that occur in the rhs.
@@ -69,6 +101,32 @@ module Dendroid
         end
 
         lhs
+      end
+
+      def valid_alternatives(alt)
+        raise StandardError, "Expecting an Array, found a #{rhs.class} instead." unless alt.is_a?(Array)
+
+        if alt.size.zero?
+          # A choice must have at least two alternatives
+          raise StandardError, "The choice for `#{head}` must have at least one alternative."
+        end
+
+        # Verify that each array element is a valid symbol sequence
+        alt.each { |elem| valid_sequence(elem) }
+
+        # Fail when duplicate rhs found
+        alt_texts = alt.map(&:to_s)
+        no_duplicate = alt_texts.uniq
+        if alt_texts.size > no_duplicate.size
+          alt_texts.each_with_index do |str, i|
+            next if str == no_duplicate[i]
+
+            err_msg = "Duplicate alternatives: #{head} => #{alt_texts[i]}"
+            raise StandardError, err_msg
+          end
+        end
+
+        alt
       end
     end # class
   end # module
