@@ -123,7 +123,7 @@ class Asciitree < BaseFormatter
       end
     end
 
-    nesting = (connector == :and) ? and_nesting_prefix : or_nesting_prefix
+    nesting = connector == :and ? and_nesting_prefix : or_nesting_prefix
     prefix << nesting
     prefix
   end

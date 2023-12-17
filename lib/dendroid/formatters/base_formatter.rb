@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-
 # Superclass for parse tree formatters.
 class BaseFormatter
   # The IO output stream in which the formatter's result will be sent.

@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require_relative 'dotted_item.rb'
+require_relative 'dotted_item'
 
 module Dendroid
   module GrmAnalysis

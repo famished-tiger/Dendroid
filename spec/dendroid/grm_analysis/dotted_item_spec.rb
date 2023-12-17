@@ -61,7 +61,7 @@ describe Dendroid::GrmAnalysis::DottedItem do
       expect(described_class.new(choice, 0, 1)).not_to be_final_pos
       expect(described_class.new(choice, 2, 1)).not_to be_final_pos
       expect(described_class.new(choice, 3, 1)).to be_final_pos
-      expect(described_class.new(choice, 3,1)).to be_completed
+      expect(described_class.new(choice, 3, 1)).to be_completed
 
       # Case of an empty alternative
       expect(described_class.new(choice, 0, 2)).to be_final_pos

@@ -422,7 +422,6 @@ describe Dendroid::Recognizer::Recognizer do
       comp_expected_actuals(chart, expectations)
     end
 
-
     it 'accepts an input with multiple levels of ambiguity' do
       recognizer = described_class.new(grammar_l8, tokenizer_l8)
       chart = recognizer.run('x x x x')

@@ -87,7 +87,6 @@ module Dendroid
         position == rule.alternatives[alt_index].size ? :completed : :partial
       end
 
-
       # Return the symbol right after the dot (if any)
       # @return [Dendroid::Syntax::GrmSymbol, NilClass]
       def next_symbol

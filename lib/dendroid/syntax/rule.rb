@@ -106,7 +106,7 @@ module Dendroid
       def valid_alternatives(alt)
         raise StandardError, "Expecting an Array, found a #{rhs.class} instead." unless alt.is_a?(Array)
 
-        if alt.size.zero?
+        if alt.empty?
           # A choice must have at least two alternatives
           raise StandardError, "The choice for `#{head}` must have at least one alternative."
         end

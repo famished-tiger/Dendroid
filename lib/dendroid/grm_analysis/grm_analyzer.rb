@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require_relative '../grm_analysis/rule_items.rb'
+require_relative '../grm_analysis/rule_items'
 
 module Dendroid
   module GrmAnalysis
@@ -111,6 +111,10 @@ module Dendroid
         result
       end
 
+      # rubocop: disable Metrics/AbcSize
+      # rubocop: disable Metrics/CyclomaticComplexity
+      # rubocop: disable Metrics/PerceivedComplexity
+
       # FOLLOW(A): is the set of terminals (+ end marker) that may come after the
       # non-terminal A.
       def build_follow_sets
@@ -154,6 +158,10 @@ module Dendroid
           break unless changed
         end
       end
+
+      # rubocop: enable Metrics/AbcSize
+      # rubocop: enable Metrics/CyclomaticComplexity
+      # rubocop: enable Metrics/PerceivedComplexity
 
       def initialize_follow_sets
         grammar.symbols.each do |symb|

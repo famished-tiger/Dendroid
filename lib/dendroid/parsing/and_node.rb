@@ -16,11 +16,9 @@ module Dendroid
       end
 
       def add_child(child_node, index)
-        if children[index].nil? # Is slot available?
-          super(child_node, index)
-        else
-          raise StandardError
-        end
+        raise StandardError unless children[index].nil? # Is slot available?
+
+        super(child_node, index)
       end
 
       def match(anEItem)

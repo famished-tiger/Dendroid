@@ -256,9 +256,7 @@ module SampleGrammars
       declare_terminals('a', 'b')
 
       rule 'S' => ['A T', 'a T']
-      # rule 'S' => 'a T'
       rule 'A' => ['a', 'B A']
-      # rule 'A' => 'B A'
       rule 'B' => ''
       rule 'T' => 'b b b'
     end

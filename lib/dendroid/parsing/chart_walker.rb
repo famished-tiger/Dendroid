@@ -8,6 +8,10 @@ module Dendroid
       attr_reader :chart
       attr_reader :last_item
 
+      # rubocop: disable Metrics/AbcSize
+      # rubocop: disable Metrics/CyclomaticComplexity
+      # rubocop: disable Metrics/PerceivedComplexity
+
       def initialize(theChart)
         @chart = theChart
       end
@@ -29,13 +33,11 @@ module Dendroid
             if start_item.rule.rhs.size == 1
               parents << ANDNode.new(start_item, curr_rank)
               progress.push_or_node(start_item.origin, preds.size)
-              progress.curr_item = start_item
-              fork(progress, paths, preds)
             else
               parents << OrNode.new(start_item.lhs, start_item.origin, curr_rank, preds.size)
-              progress.curr_item = start_item
-              fork(progress, paths, preds)
             end
+            progress.curr_item = start_item
+            fork(progress, paths, preds)
           end
         else
           parents << ANDNode.new(start_item, curr_rank)
@@ -55,7 +57,8 @@ module Dendroid
               step_back(prg, paths, token2node, entry2node, sharing, or_nodes_crossed)
             end
             # TODO: handle path removal
-            break if paths.none? { |pg| pg.state == :Running ||  pg.state == :Forking }
+            break if paths.none? { |pg| pg.state == :Running || pg.state == :Forking }
+
             pass = :secondary
           end
           break if paths.all? { |prg| prg.state == :Complete }
@@ -119,7 +122,7 @@ module Dendroid
               walk_progress.state = :Waiting
               break
             else
-              # TODO: fix assumption single predecessor
+              # TODO: challenge assumption single predecessor
               raise StandardError
             end
 
@@ -151,6 +154,7 @@ module Dendroid
               entry_empty = predecessors.delete_at(index_empty)
               walk_progress.add_node_empty(entry_empty)
               raise StandardError unless predecessors.empty? # Uncovered case
+
               walk_progress.curr_item = entry_empty
               next
             end
@@ -216,6 +220,7 @@ module Dendroid
           # raise StandardError unless parents[0].match(anEItem)
           unless parents[0].match(anEItem)
             raise StandardError
+
           end
           preds = anEItem.predecessors.dup
           preds.delete(anEItem)
@@ -278,7 +283,7 @@ module Dendroid
       def fork(walk_progress, paths, sorted_predecessors)
         progs = [walk_progress]
         walk_progress.fork(sorted_predecessors[0])
-        sorted_predecessors[1..-1].each do |prd|
+        sorted_predecessors[1..].each do |prd|
           alternate = walk_progress.dup
           alternate.fork(prd)
           paths << alternate
@@ -287,7 +292,10 @@ module Dendroid
 
         progs.each { |pg| pg.push_and_node(pg.curr_item) }
       end
-
     end # class
+
+    # rubocop: enable Metrics/AbcSize
+    # rubocop: enable Metrics/CyclomaticComplexity
+    # rubocop: enable Metrics/PerceivedComplexity
   end # module
 end # module

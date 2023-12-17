@@ -23,7 +23,7 @@ module Dendroid
         aVisitor.visit_terminal(self)
       end
 
-      def to_s()
+      def to_s
         display_val = token.is_a?(Dendroid::Lexical::Literal) ? ": #{token.value}" : ''
         "#{symbol.name}#{display_val} #{super}"
       end

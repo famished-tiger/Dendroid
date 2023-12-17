@@ -16,7 +16,7 @@ module Dendroid
       attr_reader :item_sets
 
       # @return [Array<Dendroid::Lexical::Token>] The input tokens
-      attr_reader :tokens
+      attr_accessor :tokens
 
       # @return [Boolean] Indicates whether the recognizer successfully processed the whole input
       attr_writer :success
@@ -46,11 +46,6 @@ module Dendroid
       # @param e_item [EItem]
       def seed_last_set(e_item)
         item_sets.last.add_item(e_item)
-      end
-
-      # @param input_tokens [Array<Dendroid::Lexical::Token>] The input tokens
-      def tokens=(input_tokens)
-        @tokens = input_tokens
       end
 
       # Return true if the input text is valid according to the grammar.

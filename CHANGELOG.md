@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+## [0.2.01] - 2023-12-17
+Code re-styling to fix most Rubocop offenses.
+
 ## [0.2.00] - 2023-12-16
 Version bump: Very crude parser implementation (generate shared parse forests in case of ambiguity).
 

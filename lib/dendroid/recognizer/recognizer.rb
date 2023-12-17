@@ -5,7 +5,7 @@ require_relative 'e_item'
 require_relative 'chart'
 
 module Dendroid
-  # This module host classes needed to implement an Earley recognizer
+  # This module host classes needed to implement an Earley recognizer.
   module Recognizer
     # A recognizer determines whether the input text complies to the grammar (syntax) rules.
     # This class implements the Earley recognition algorithm.
@@ -15,6 +15,10 @@ module Dendroid
 
       # @return [Object]
       attr_reader :tokenizer
+
+      # rubocop: disable Metrics/AbcSize
+      # rubocop: disable Metrics/CyclomaticComplexity
+      # rubocop: disable Metrics/PerceivedComplexity
 
       # @param grammar [Dendroid::Syntax::Grammar]
       # @param tokenizer [Object]
@@ -120,7 +124,7 @@ module Dendroid
       #   Assuming next symbol is a non-terminal
       #
       #   Error case: next actual token matches none of the expected tokens.
-      def predictor(chart, item, rank, tokens, mode, predicted_symbols)
+      def predictor(chart, item, rank, tokens, mode, _predicted_symbols)
         next_symbol = item.next_symbol
         # if mode == :genuine
         #   predicted_symbols << Set.new if rank == predicted_symbols.size
@@ -149,9 +153,7 @@ module Dendroid
         next_item = grm_analysis.next_item(item.dotted_item)
         return unless next_item
 
-        special = add_item(curr_set, next_item, item.origin, nil, :predictor)
-        # special = add_item(curr_set, next_item, item.origin, added.shift, :predictor)
-        # added.each { |e|  special.add_predecessor(e) }
+        add_item(curr_set, next_item, item.origin, nil, :predictor)
       end
 
       # procedure SCANNER((A → α•aβ, j), k, words)
@@ -263,7 +265,7 @@ module Dendroid
 
       def expected_terminals(chart)
         last_set = chart.last
-        terminals = last_set.items.reduce([]) do |result, ent|
+        terminals = last_set.items.each_with_object([]) do |ent, result|
           result << ent.next_symbol if ent.pre_scan?
           result
         end
@@ -282,5 +284,9 @@ module Dendroid
         end
       end
     end # class
+
+    # rubocop: enable Metrics/AbcSize
+    # rubocop: enable Metrics/CyclomaticComplexity
+    # rubocop: enable Metrics/PerceivedComplexity
   end # module
 end # module

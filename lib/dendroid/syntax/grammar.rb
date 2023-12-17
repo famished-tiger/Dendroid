@@ -39,6 +39,8 @@ module Dendroid
         add_terminals(terminals)
       end
 
+      # rubocop: disable Style/IfUnlessModifier
+
       # Add a rule to the grammar.
       # @param rule [Dendroid::Syntax::Rule]
       def add_rule(rule)
@@ -55,6 +57,8 @@ module Dendroid
         rules << rule
         nonterm2production[rule.head] = rule
       end
+
+      # rubocop: enable Style/IfUnlessModifier
 
       # Return the start symbol for the language, that is,
       # the non-terminal symbol used to denote the top-level

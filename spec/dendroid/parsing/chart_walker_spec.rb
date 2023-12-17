@@ -37,6 +37,7 @@ RSpec.describe Dendroid::Parsing::ChartWalker do
     retrieve_success_item(chart, recognizer.grm_analysis.grammar)
   end
 
+  # rubocop: disable Naming/VariableNumber
   context 'Parsing non-ambiguous grammars' do
     it 'generates a parse tree for the example from Wikipedia' do
       recognizer = recognizer_for(grammar_l1, tokenizer_l1)
@@ -45,7 +46,7 @@ RSpec.describe Dendroid::Parsing::ChartWalker do
       root = walker.walk(success_entry(chart, recognizer))
 
       expect(root.to_s).to eq('p => s [0, 5]')
-      expect(root.children.size). to eq(1)
+      expect(root.children.size).to eq(1)
       expect(root.children[-1].to_s).to eq('s => s PLUS m [0, 5]')
       plus_expr = root.children[-1]
       expect(plus_expr.children.size).to eq(3)
@@ -84,7 +85,7 @@ RSpec.describe Dendroid::Parsing::ChartWalker do
       root = walker.walk(success_entry(chart, recognizer))
 
       expect(root.to_s).to eq('A => A a [0, 5]')
-      expect(root.children.size). to eq(2)
+      expect(root.children.size).to eq(2)
       expect(root.children[0].to_s).to eq('A => A a [0, 4]')
       expect(root.children[1].to_s).to eq('a [4, 5]')
 
@@ -113,7 +114,7 @@ RSpec.describe Dendroid::Parsing::ChartWalker do
       root = walker.walk(success_entry(chart, recognizer))
 
       expect(root.to_s).to eq('A => a A [0, 5]')
-      expect(root.children.size). to eq(2)
+      expect(root.children.size).to eq(2)
       expect(root.children[0].to_s).to eq('a [0, 1]')
       expect(root.children[1].to_s).to eq('A => a A [1, 5]')
 
@@ -144,7 +145,7 @@ RSpec.describe Dendroid::Parsing::ChartWalker do
       root = walker.walk(success_entry(chart, recognizer))
 
       expect(root.to_s).to eq('OR: S [0, 4]')
-      expect(root.children.size). to eq(3)
+      expect(root.children.size).to eq(3)
       root.children.each do |child|
         expect(child.children.size).to eq(2)
         expect(child.to_s).to eq('S => S S [0, 4]')
@@ -217,7 +218,33 @@ RSpec.describe Dendroid::Parsing::ChartWalker do
       expect(child_c_1_1_1.to_s).to eq('S => x [3, 4]')
       expect(child_c_1_1_1.equal?(child_b_1)).to be_truthy # Sharing
     end
+
+    it "generates a parse forest for example 3 in paper 'SPPF-Style Parsing From Earley Recognisers'" do
+      recognizer = recognizer_for(grammar_l7, tokenizer_l7)
+      chart = recognizer.run('a a')
+      walker = described_class.new(chart)
+      root = walker.walk(success_entry(chart, recognizer))
+
+      expect(root.to_s).to eq('OR: S [0, 2]')
+      expect(root.children.size).to eq(2)
+      root.children.each do |ch|
+        expect(ch.to_s).to eq('S => S T [0, 2]')
+        expect(ch.children.size).to eq(2)
+      end
+      (child_0_0, child_0_1) = root.children[0].children
+      expect(child_0_0.to_s).to eq('S => a [0, 1]')
+      expect(child_0_1.to_s).to eq('T => a B [1, 2]')
+      expect(child_0_1.children.size).to eq(2)
+      expect(child_0_1.children[0].to_s).to eq('a [1, 2]')
+      expect(child_0_1.children[1].to_s).to eq('_ [2, 2]')
+
+      (child_1_0, child_1_1) = root.children[1].children
+      expect(child_1_0.to_s).to eq('S => a [0, 1]')
+      expect(child_1_1.to_s).to eq('T => a [1, 2]')
+      expect(child_1_0.equal?(child_0_0)).to be_truthy # Sharing
+      expect(child_1_1.children[0].to_s).to eq('a [1, 2]')
+      expect(child_1_1.children[0].equal?(child_0_1.children[0])).to be_truthy # Sharing
+    end
   end # context
+  # rubocop: enable Naming/VariableNumber
 end # describe
-
-

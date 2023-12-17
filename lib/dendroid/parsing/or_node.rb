@@ -4,7 +4,7 @@ require_relative 'composite_parse_node'
 
 module Dendroid
   module Parsing
-    class OrNode  < CompositeParseNode
+    class OrNode < CompositeParseNode
       attr_reader :symbol
 
       def initialize(sym, lower, upper, arity)
@@ -14,15 +14,10 @@ module Dendroid
 
       def add_child(child_node, _index)
         idx = children.find_index(&:nil?)
-        if idx
-          # Use first found available slot...
-          super(child_node, idx)
-          if children.size > 3
-            raise StandardError
-          end
-        else
-          raise StandardError
-        end
+        raise StandardError unless idx
+
+        # Use first found available slot...
+        super(child_node, idx)
       end
 
       def match(anEItem)

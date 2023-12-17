@@ -14,6 +14,9 @@ module Dendroid
       attr_accessor :predecessor
       attr_reader :parents
 
+      # rubocop: disable Metrics/CyclomaticComplexity
+      # rubocop: disable Metrics/PerceivedComplexity
+
       def initialize(start_rank, start_item, parents)
         @state = :New
         @curr_rank = start_rank
@@ -37,11 +40,9 @@ module Dendroid
       end
 
       def curr_item=(anEntry)
-        if anEntry.nil?
-          raise StandardError
-        else
-          @curr_item = anEntry
-        end
+        raise StandardError if anEntry.nil?
+
+        @curr_item = anEntry
       end
 
       def add_node_empty(anEntry)
@@ -60,6 +61,7 @@ module Dendroid
       def push_and_node(anEntry)
         node = ANDNode.new(anEntry, curr_rank)
         raise StandardError unless anEntry.rule == node.rule # Fails
+
         add_child_node(node)
         parents.push(node)
 
@@ -94,9 +96,7 @@ module Dendroid
             next
           end
           entries.each do |ent|
-            if first_iteration
-              min_origin = ent.origin if ent.origin < min_origin
-            end
+            min_origin = ent.origin if first_iteration && ent.origin < min_origin
             next unless node.match(ent)
 
             matching << [ent, offset]
@@ -107,11 +107,15 @@ module Dendroid
 
           # Stop loop when parent.origin < min(entries.origin)
           break if node.range[0] < min_origin
+
           offset += 1
         end
 
         matching
       end
     end # class
+
+    # rubocop: enable Metrics/CyclomaticComplexity
+    # rubocop: enable Metrics/PerceivedComplexity
   end # module
 end # module
