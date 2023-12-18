@@ -5,7 +5,6 @@ require_relative 'parse_node'
 module Dendroid
   module Parsing
     class CompositeParseNode < ParseNode
-      attr_reader :range
       attr_reader :children
 
       def initialize(lowerBound, upperBound, child_count)

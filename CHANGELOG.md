@@ -2,11 +2,24 @@
 
 ## [Unreleased]
 
+## [0.2.02] - 2023-12-18
+Code re-styling to fix most Rubocop offenses.
+
+### Added
+- Directory 'modeling' for PlantUML text files.
+
+### Changed
+- File `dendroid.rb`: added `relative_require` to load key dependencies. 
+
 ## [0.2.01] - 2023-12-17
 Code re-styling to fix most Rubocop offenses.
 
 ## [0.2.00] - 2023-12-16
 Version bump: Very crude parser implementation (generate shared parse forests in case of ambiguity).
+
+### Added
+- Directory `parsing`: module implementing a parser
+- Directory `formatters`: module with classes for rendering parse tree/forest 
 
 ## [0.1.00] - 2023-11-03
 Version bump: the Earley recognizer is functional.

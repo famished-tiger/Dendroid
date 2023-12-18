@@ -1,0 +1,132 @@
+@startuml
+  title Domain Model v.0.2.02
+
+  ' STYLE
+  hide circle
+
+  namespace Syntax {
+    ' CLASSES
+    class GrmSymbol {
+      name
+    }
+
+    class Terminal
+    class NonTerminal
+    class SymbolSeq
+    class Rule
+    class Grammar
+
+    ' RELATIONSHIPS
+    GrmSymbol <|-- Terminal
+    GrmSymbol <|-- NonTerminal
+    SymbolSeq o-- "* members" GrmSymbol
+    Rule -- "1 head" NonTerminal
+    Rule o-- "1,* alternatives" SymbolSeq
+    Grammar o-- "* rules" Rule
+    Grammar -- "1,* symbols" GrmSymbol
+    Grammar -- "1 start rule" Rule
+  }
+
+  namespace GrmDSL {
+  	' CLASSES
+  	class BaseGrmBuilder
+
+  	' EXTERNAL DEPENDENCIES
+  	BaseGrmBuilder ..> Grammar: <<create>>
+  }
+  ' PACKAGE DEPENDENCIES
+  GrmDSL ..> Syntax
+
+  namespace GrmAnalysis {
+    ' CLASSES
+    class DottedItem {
+      production
+      position
+    }
+
+    class GrmAnalyzer
+
+    ' RELATIONSHIPS
+		GrmAnalyzer -- "*" DottedItem
+
+    ' EXTERNAL DEPENDENCIES
+    DottedItem::production ..> Rule
+    GrmAnalyzer o--> Grammar
+  }
+
+  namespace Lexical {
+    ' CLASSES
+    class Token {
+      source
+      position
+      terminal
+    }
+
+    class Literal {
+      value
+    }
+
+    ' RELATIONSHIPS
+    Token <|-- Literal
+
+    ' EXTERNAL DEPENDENCIES
+    Token::terminal ..> "0,1" Terminal
+  }
+
+  namespace Recognizer {
+    ' CLASSES
+    class Recognizer
+    class ItemSet
+    class EItem {
+      origin
+    }
+
+
+    ' RELATIONSHIPS
+    Recognizer o-- "*" ItemSet
+    ItemSet o-- EItem
+
+    ' EXTERNAL DEPENDENCIES
+    Recognizer --> GrmAnalyzer
+    EItem --> "1" DottedItem
+  }
+
+  namespace Parsing {
+  	' CLASSES
+  	class ParseNode {
+  		range
+  	}
+  	class EmptyRuleNode
+  	class TerminalNode {
+  		token
+  	}
+  	class CompositeNode
+  	class ANDNode
+  	class OrNode
+  	class WalkProgress {
+  		state
+  		curr_rank
+  		parents
+  	}
+  	class ChartWalker {
+  		chart
+  	}
+
+    ' RELATIONSHIPS
+    ParseNode <|-- EmptyRuleNode
+    ParseNode <|-- TerminalNode
+    ParseNode <|-- CompositeNode
+    CompositeNode <|-- ANDNode
+    CompositeNode <|-- OrNode
+
+    ' EXTERNAL DEPENDENCIES
+    EmptyRuleNode --> "1" Rule
+    TerminalNode::token --> "1" Token
+    CompositeNode o-- "1,* children" ParseNode
+    ANDNode --> Rule
+    ORNode --> NonTerminal
+    WalkProgress --> "curr_item" EItem
+    WalkProgress::parents --> "*" CompositeNode
+    ChartWalker::chart --> "1" Chart
+  }
+@enduml

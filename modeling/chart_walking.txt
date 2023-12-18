@@ -1,0 +1,20 @@
+@startuml
+
+	skin rose
+
+	Title WalkProgress Lifecycle
+
+	' STATES
+	State New
+	State Running
+	State Complete
+	State Waiting
+
+	' STATE TRANSITIONS
+	[*] --> New : new
+	New --> Running
+	Running --> Complete
+	Running -> Waiting
+	Waiting -> Running
+	Complete --> [*]
+@enduml

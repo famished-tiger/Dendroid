@@ -57,7 +57,6 @@ module Dendroid
         rules << rule
         nonterm2production[rule.head] = rule
       end
-
       # rubocop: enable Style/IfUnlessModifier
 
       # Return the start symbol for the language, that is,
@@ -271,11 +270,6 @@ module Dendroid
           end
         end
 
-        # symbols.each do |sym|
-        #   next if sym.terminal?
-        #
-        #   sym.nullable = false if sym.nullable.nil?
-        # end
         symbols.each do |sym|
           next if sym.terminal? || sym.nullable?
 
