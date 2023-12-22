@@ -22,15 +22,15 @@ RSpec.describe Dendroid::Parsing::TerminalNode do
     it 'should be initialized with a symbol, terminal and a rank' do
       expect { described_class.new(ex_terminal, plus_token, 3) }.not_to raise_error
     end
-  end
+  end # context
 
-  context 'provided services' do
+  context 'provided services:' do
     it 'renders a String representation of itself' do
-      expect(plus_node.to_s).to eq('PLUS [3, 4]')
+      expect(plus_node.to_s).to eq('PLUS [3..4]')
     end
 
     it 'renders also the token value (if any)' do
-      expect(int_node.to_s).to eq('INTEGER: 2 [5, 6]')
+      expect(int_node.to_s).to eq('INTEGER: 2 [5..6]')
     end
   end
 end

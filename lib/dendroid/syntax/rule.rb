@@ -12,7 +12,7 @@ module Dendroid
       # @return [Array<Dendroid::Syntax::SymbolSeq>]
       attr_reader :alternatives
 
-      # Create a Choice instance.
+      # Create a Rule instance.
       # @param theLhs [Dendroid::Syntax::NonTerminal] The left-hand side of the rule.
       # @param alt [Array<Dendroid::Syntax::SymbolSeq>] the alternatives (each as a sequence of symbols).
       def initialize(theLhs, alt)

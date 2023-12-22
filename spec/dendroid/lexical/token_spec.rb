@@ -27,5 +27,9 @@ describe Dendroid::Lexical::Token do
     it 'knows the terminal name' do
       expect(subject.terminal).to eq(ex_terminal)
     end
+
+    it 'has no literal value attached to it' do
+      expect(subject).not_to be_literal
+    end
   end # context
 end # describe

@@ -8,6 +8,7 @@ module Dendroid
     # An Earley item is essentially a pair consisting of a dotted item and the rank of a token.
     # It helps to keep track the progress of an Earley recognizer.
     class EItem
+      # Mix-in module used to forward some method calls to the related dotted item.
       extend Forwardable
 
       # (Weak) reference to the dotted item
@@ -17,7 +18,8 @@ module Dendroid
       # @return [Integer] the rank of the token that correspond to the start of the rule.
       attr_reader :origin
 
-      # TODO: :predictor, :completer, :scanner
+      # Specifies the algorithm with which this entry can be derived from its predecessor(s).
+      # @return [Symbol] of one: :predictor, :completer, :scanner
       attr_accessor :algo
 
       # @return [Array<WeakRef>] predecessors sorted by decreasing origin value

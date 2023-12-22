@@ -23,6 +23,11 @@ module Dendroid
         super(original, pos, symbol)
         @value = aValue
       end
+
+      # @return [Boolean] true if the token is a literal (has a value associated with is)
+      def literal?
+        true
+      end
     end # class
   end # module
 end # module

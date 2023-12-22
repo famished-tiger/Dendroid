@@ -45,37 +45,37 @@ RSpec.describe Dendroid::Parsing::ChartWalker do
       walker = described_class.new(chart)
       root = walker.walk(success_entry(chart, recognizer))
 
-      expect(root.to_s).to eq('p => s [0, 5]')
+      expect(root.to_s).to eq('p => s [0..5]')
       expect(root.children.size).to eq(1)
-      expect(root.children[-1].to_s).to eq('s => s PLUS m [0, 5]')
+      expect(root.children[-1].to_s).to eq('s => s PLUS m [0..5]')
       plus_expr = root.children[-1]
       expect(plus_expr.children.size).to eq(3)
-      expect(plus_expr.children[0].to_s).to eq('s => m [0, 1]')
-      expect(plus_expr.children[1].to_s).to eq('PLUS [1, 2]')
-      expect(plus_expr.children[2].to_s).to eq('m => m STAR t [2, 5]')
+      expect(plus_expr.children[0].to_s).to eq('s => m [0..1]')
+      expect(plus_expr.children[1].to_s).to eq('PLUS [1..2]')
+      expect(plus_expr.children[2].to_s).to eq('m => m STAR t [2..5]')
 
       operand_plus = plus_expr.children[0]
       expect(operand_plus.children.size).to eq(1)
-      expect(operand_plus.children[0].to_s).to eq('m => t [0, 1]')
+      expect(operand_plus.children[0].to_s).to eq('m => t [0..1]')
       expect(operand_plus.children[0].children.size).to eq(1)
-      expect(operand_plus.children[0].children[0].to_s).to eq('t => INTEGER [0, 1]')
-      expect(operand_plus.children[0].children[0].children[0].to_s).to eq('INTEGER: 2 [0, 1]')
+      expect(operand_plus.children[0].children[0].to_s).to eq('t => INTEGER [0..1]')
+      expect(operand_plus.children[0].children[0].children[0].to_s).to eq('INTEGER: 2 [0..1]')
 
-      expect(plus_expr.children[1].to_s).to eq('PLUS [1, 2]')
+      expect(plus_expr.children[1].to_s).to eq('PLUS [1..2]')
 
       star_expr = plus_expr.children[2]
       expect(star_expr.children.size).to eq(3)
-      expect(star_expr.children[0].to_s).to eq('m => t [2, 3]')
-      expect(star_expr.children[1].to_s).to eq('STAR [3, 4]')
-      expect(star_expr.children[2].to_s).to eq('t => INTEGER [4, 5]')
+      expect(star_expr.children[0].to_s).to eq('m => t [2..3]')
+      expect(star_expr.children[1].to_s).to eq('STAR [3..4]')
+      expect(star_expr.children[2].to_s).to eq('t => INTEGER [4..5]')
 
       operand_star = star_expr.children[0]
       expect(operand_star.children.size).to eq(1)
-      expect(operand_star.children[0].to_s).to eq('t => INTEGER [2, 3]')
-      expect(operand_star.children[0].children[0].to_s).to eq('INTEGER: 3 [2, 3]')
+      expect(operand_star.children[0].to_s).to eq('t => INTEGER [2..3]')
+      expect(operand_star.children[0].children[0].to_s).to eq('INTEGER: 3 [2..3]')
 
       expect(star_expr.children[2].children.size).to eq(1)
-      expect(star_expr.children[2].children[0].to_s).to eq('INTEGER: 4 [4, 5]')
+      expect(star_expr.children[2].children[0].to_s).to eq('INTEGER: 4 [4..5]')
     end
 
     it 'generates a parse tree for grammar l10 (with left recursive rule)' do
@@ -84,27 +84,27 @@ RSpec.describe Dendroid::Parsing::ChartWalker do
       walker = described_class.new(chart)
       root = walker.walk(success_entry(chart, recognizer))
 
-      expect(root.to_s).to eq('A => A a [0, 5]')
+      expect(root.to_s).to eq('A => A a [0..5]')
       expect(root.children.size).to eq(2)
-      expect(root.children[0].to_s).to eq('A => A a [0, 4]')
-      expect(root.children[1].to_s).to eq('a [4, 5]')
+      expect(root.children[0].to_s).to eq('A => A a [0..4]')
+      expect(root.children[1].to_s).to eq('a [4..5]')
 
       expect(root.children[0].children.size).to eq(2)
-      expect(root.children[0].children[0].to_s).to eq('A => A a [0, 3]')
-      expect(root.children[0].children[1].to_s).to eq('a [3, 4]')
+      expect(root.children[0].children[0].to_s).to eq('A => A a [0..3]')
+      expect(root.children[0].children[1].to_s).to eq('a [3..4]')
 
       grand_child = root.children[0].children[0]
       expect(grand_child.children.size).to eq(2)
-      expect(grand_child.children[0].to_s).to eq('A => A a [0, 2]')
-      expect(grand_child.children[1].to_s).to eq('a [2, 3]')
+      expect(grand_child.children[0].to_s).to eq('A => A a [0..2]')
+      expect(grand_child.children[1].to_s).to eq('a [2..3]')
 
       expect(grand_child.children[0].children.size).to eq(2)
-      expect(grand_child.children[0].children[0].to_s).to eq('A => A a [0, 1]')
-      expect(grand_child.children[0].children[1].to_s).to eq('a [1, 2]')
+      expect(grand_child.children[0].children[0].to_s).to eq('A => A a [0..1]')
+      expect(grand_child.children[0].children[1].to_s).to eq('a [1..2]')
 
       expect(grand_child.children[0].children[0].children.size).to eq(2)
-      expect(grand_child.children[0].children[0].children[0].to_s).to eq('_ [0, 0]')
-      expect(grand_child.children[0].children[0].children[1].to_s).to eq('a [0, 1]')
+      expect(grand_child.children[0].children[0].children[0].to_s).to eq('_ [0..0]')
+      expect(grand_child.children[0].children[0].children[1].to_s).to eq('a [0..1]')
     end
 
     it 'generates a parse tree for grammar l11 (with right recursive rule)' do
@@ -113,27 +113,27 @@ RSpec.describe Dendroid::Parsing::ChartWalker do
       walker = described_class.new(chart)
       root = walker.walk(success_entry(chart, recognizer))
 
-      expect(root.to_s).to eq('A => a A [0, 5]')
+      expect(root.to_s).to eq('A => a A [0..5]')
       expect(root.children.size).to eq(2)
-      expect(root.children[0].to_s).to eq('a [0, 1]')
-      expect(root.children[1].to_s).to eq('A => a A [1, 5]')
+      expect(root.children[0].to_s).to eq('a [0..1]')
+      expect(root.children[1].to_s).to eq('A => a A [1..5]')
 
       expect(root.children[1].children.size).to eq(2)
-      expect(root.children[1].children[0].to_s).to eq('a [1, 2]')
-      expect(root.children[1].children[1].to_s).to eq('A => a A [2, 5]')
+      expect(root.children[1].children[0].to_s).to eq('a [1..2]')
+      expect(root.children[1].children[1].to_s).to eq('A => a A [2..5]')
 
       grand_child = root.children[1].children[1]
       expect(grand_child.children.size).to eq(2)
-      expect(grand_child.children[0].to_s).to eq('a [2, 3]')
-      expect(grand_child.children[1].to_s).to eq('A => a A [3, 5]')
+      expect(grand_child.children[0].to_s).to eq('a [2..3]')
+      expect(grand_child.children[1].to_s).to eq('A => a A [3..5]')
 
       expect(grand_child.children[1].children.size).to eq(2)
-      expect(grand_child.children[1].children[0].to_s).to eq('a [3, 4]')
-      expect(grand_child.children[1].children[1].to_s).to eq('A => a A [4, 5]')
+      expect(grand_child.children[1].children[0].to_s).to eq('a [3..4]')
+      expect(grand_child.children[1].children[1].to_s).to eq('A => a A [4..5]')
 
       expect(grand_child.children[1].children[1].children.size).to eq(2)
-      expect(grand_child.children[1].children[1].children[0].to_s).to eq('a [4, 5]')
-      expect(grand_child.children[1].children[1].children[1].to_s).to eq('_ [5, 5]')
+      expect(grand_child.children[1].children[1].children[0].to_s).to eq('a [4..5]')
+      expect(grand_child.children[1].children[1].children[1].to_s).to eq('_ [5..5]')
     end
   end # context
 
@@ -144,78 +144,78 @@ RSpec.describe Dendroid::Parsing::ChartWalker do
       walker = described_class.new(chart)
       root = walker.walk(success_entry(chart, recognizer))
 
-      expect(root.to_s).to eq('OR: S [0, 4]')
+      expect(root.to_s).to eq('OR: S [0..4]')
       expect(root.children.size).to eq(3)
       root.children.each do |child|
         expect(child.children.size).to eq(2)
-        expect(child.to_s).to eq('S => S S [0, 4]')
+        expect(child.to_s).to eq('S => S S [0..4]')
       end
       (a, b, c) = root.children
 
       # Test structure of tree a
       (child_a_0, child_a_1) = a.children
-      expect(child_a_0.to_s).to eq('S => S S [0, 2]')
-      expect(child_a_1.to_s).to eq('S => S S [2, 4]')
+      expect(child_a_0.to_s).to eq('S => S S [0..2]')
+      expect(child_a_1.to_s).to eq('S => S S [2..4]')
       expect(child_a_0.children.size).to eq(2)
       (child_a_0_0, child_a_0_1) = child_a_0.children
-      expect(child_a_0_0.to_s).to eq('S => x [0, 1]')
-      expect(child_a_0_1.to_s).to eq('S => x [1, 2]')
-      expect(child_a_0_0.children[0].to_s).to eq('x [0, 1]')
-      expect(child_a_0_1.children[0].to_s).to eq('x [1, 2]')
+      expect(child_a_0_0.to_s).to eq('S => x [0..1]')
+      expect(child_a_0_1.to_s).to eq('S => x [1..2]')
+      expect(child_a_0_0.children[0].to_s).to eq('x [0..1]')
+      expect(child_a_0_1.children[0].to_s).to eq('x [1..2]')
 
       expect(child_a_1.children.size).to eq(2)
       (child_a_1_0, child_a_1_1) = child_a_1.children
-      expect(child_a_1_0.to_s).to eq('S => x [2, 3]')
-      expect(child_a_1_1.to_s).to eq('S => x [3, 4]')
-      expect(child_a_1_0.children[0].to_s).to eq('x [2, 3]')
-      expect(child_a_1_1.children[0].to_s).to eq('x [3, 4]')
+      expect(child_a_1_0.to_s).to eq('S => x [2..3]')
+      expect(child_a_1_1.to_s).to eq('S => x [3..4]')
+      expect(child_a_1_0.children[0].to_s).to eq('x [2..3]')
+      expect(child_a_1_1.children[0].to_s).to eq('x [3..4]')
 
       # Test structure of forest b
       (child_b_0, child_b_1) = b.children
-      expect(child_b_0.to_s).to eq('OR: S [0, 3]')
-      expect(child_b_1.to_s).to eq('S => x [3, 4]')
+      expect(child_b_0.to_s).to eq('OR: S [0..3]')
+      expect(child_b_1.to_s).to eq('S => x [3..4]')
       expect(child_b_1.equal?(child_a_1_1)).to be_truthy # Sharing
       expect(child_b_0.children.size).to eq(2)
       (child_b_0_0, child_b_0_1) = child_b_0.children
-      expect(child_b_0_0.to_s).to eq('S => S S [0, 3]')
-      expect(child_b_0_1.to_s).to eq('S => S S [0, 3]')
+      expect(child_b_0_0.to_s).to eq('S => S S [0..3]')
+      expect(child_b_0_1.to_s).to eq('S => S S [0..3]')
       expect(child_b_0_0.children.size).to eq(2)
       (child_b_0_0_0, child_b_0_0_1) = child_b_0_0.children
-      expect(child_b_0_0_0.to_s).to eq('S => x [0, 1]')
+      expect(child_b_0_0_0.to_s).to eq('S => x [0..1]')
       expect(child_b_0_0_0.equal?(child_a_0_0)).to be_truthy # Sharing
-      expect(child_b_0_0_1.to_s).to eq('S => S S [1, 3]')
+      expect(child_b_0_0_1.to_s).to eq('S => S S [1..3]')
       expect(child_b_0_0_1.children.size).to eq(2)
-      expect(child_b_0_0_1.children[0].to_s).to eq('S => x [1, 2]')
+      expect(child_b_0_0_1.children[0].to_s).to eq('S => x [1..2]')
       expect(child_b_0_0_1.children[0].equal?(child_a_0_1)).to be_truthy # Sharing
-      expect(child_b_0_0_1.children[1].to_s).to eq('S => x [2, 3]')
+      expect(child_b_0_0_1.children[1].to_s).to eq('S => x [2..3]')
       expect(child_b_0_0_1.children[1].equal?(child_a_1_0)).to be_truthy # Sharing
 
       expect(child_b_0_1.children.size).to eq(2)
       (child_b_0_1_0, child_b_0_1_1) = child_b_0_1.children
-      expect(child_b_0_1_0.to_s).to eq('S => S S [0, 2]')
+      expect(child_b_0_1_0.to_s).to eq('S => S S [0..2]')
       expect(child_b_0_1_0.equal?(child_a_0)).to be_truthy # Sharing
-      expect(child_b_0_1_1.to_s).to eq('S => x [2, 3]')
+      expect(child_b_0_1_1.to_s).to eq('S => x [2..3]')
       expect(child_b_0_1_1.equal?(child_a_1_0)).to be_truthy # Sharing
 
       # Test structure of forest c
       (child_c_0, child_c_1) = c.children
-      expect(child_c_0.to_s).to eq('S => x [0, 1]')
+      expect(child_c_0.to_s).to eq('S => x [0..1]')
       expect(child_c_0.equal?(child_a_0_0)).to be_truthy # Sharing
-      expect(child_c_1.to_s).to eq('OR: S [1, 4]')
+      expect(child_c_1.to_s).to eq('OR: S [1..4]')
       expect(child_c_1.children.size).to eq(2)
       (child_c_1_0, child_c_1_1) = child_c_1.children
-      expect(child_c_1_0.to_s).to eq('S => S S [1, 4]')
-      expect(child_c_1_1.to_s).to eq('S => S S [1, 4]')
+      expect(child_c_1_0.to_s).to eq('S => S S [1..4]')
+      expect(child_c_1_1.to_s).to eq('S => S S [1..4]')
       expect(child_c_1_0.children.size).to eq(2)
       (child_c_1_0_0, child_c_1_0_1) = child_c_1_0.children
-      expect(child_c_1_0_0.to_s).to eq('S => x [1, 2]')
+      expect(child_c_1_0_0.to_s).to eq('S => x [1..2]')
       expect(child_c_1_0_0.equal?(child_a_0_1)).to be_truthy # Sharing
-      expect(child_c_1_0_1.to_s).to eq('S => S S [2, 4]')
+      expect(child_c_1_0_1.to_s).to eq('S => S S [2..4]')
       expect(child_c_1_0_1.equal?(child_a_1)).to be_truthy # Sharing
       (child_c_1_1_0, child_c_1_1_1) = child_c_1_1.children
-      expect(child_c_1_1_0.to_s).to eq('S => S S [1, 3]')
+      expect(child_c_1_1_0.to_s).to eq('S => S S [1..3]')
       expect(child_c_1_1_0.equal?(child_b_0_0_1)).to be_truthy # Sharing
-      expect(child_c_1_1_1.to_s).to eq('S => x [3, 4]')
+      expect(child_c_1_1_1.to_s).to eq('S => x [3..4]')
       expect(child_c_1_1_1.equal?(child_b_1)).to be_truthy # Sharing
     end
 
@@ -225,24 +225,24 @@ RSpec.describe Dendroid::Parsing::ChartWalker do
       walker = described_class.new(chart)
       root = walker.walk(success_entry(chart, recognizer))
 
-      expect(root.to_s).to eq('OR: S [0, 2]')
+      expect(root.to_s).to eq('OR: S [0..2]')
       expect(root.children.size).to eq(2)
       root.children.each do |ch|
-        expect(ch.to_s).to eq('S => S T [0, 2]')
+        expect(ch.to_s).to eq('S => S T [0..2]')
         expect(ch.children.size).to eq(2)
       end
       (child_0_0, child_0_1) = root.children[0].children
-      expect(child_0_0.to_s).to eq('S => a [0, 1]')
-      expect(child_0_1.to_s).to eq('T => a B [1, 2]')
+      expect(child_0_0.to_s).to eq('S => a [0..1]')
+      expect(child_0_1.to_s).to eq('T => a B [1..2]')
       expect(child_0_1.children.size).to eq(2)
-      expect(child_0_1.children[0].to_s).to eq('a [1, 2]')
-      expect(child_0_1.children[1].to_s).to eq('_ [2, 2]')
+      expect(child_0_1.children[0].to_s).to eq('a [1..2]')
+      expect(child_0_1.children[1].to_s).to eq('_ [2..2]')
 
       (child_1_0, child_1_1) = root.children[1].children
-      expect(child_1_0.to_s).to eq('S => a [0, 1]')
-      expect(child_1_1.to_s).to eq('T => a [1, 2]')
+      expect(child_1_0.to_s).to eq('S => a [0..1]')
+      expect(child_1_1.to_s).to eq('T => a [1..2]')
       expect(child_1_0.equal?(child_0_0)).to be_truthy # Sharing
-      expect(child_1_1.children[0].to_s).to eq('a [1, 2]')
+      expect(child_1_1.children[0].to_s).to eq('a [1..2]')
       expect(child_1_1.children[0].equal?(child_0_1.children[0])).to be_truthy # Sharing
     end
   end # context

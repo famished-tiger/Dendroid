@@ -6,7 +6,7 @@ class BracketNotation < BaseFormatter
   # Method called by a ParseTreeVisitor to which the formatter subscribed.
   # Notification of a visit event: the visitor is about to visit
   # a non-terminal node
-  # @param and_node [ANDNode]
+  # @param and_node [AndNode]
   def before_and_node(and_node)
     write("[#{and_node.rule.lhs.name} ")
   end

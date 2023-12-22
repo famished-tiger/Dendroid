@@ -45,7 +45,7 @@ class ParseTreeVisitor
   end
 
   # Visit event. The visitor is about to visit the given non terminal node.
-  # @param aNonTerminalNode [ANDNode] the node to visit.
+  # @param aNonTerminalNode [AndNode] the node to visit.
   def visit_and_node(aNonTerminalNode)
     if @traversal == :post_order
       broadcast(:before_and_node, aNonTerminalNode)

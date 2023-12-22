@@ -2,6 +2,17 @@
 
 ## [Unreleased]
 
+## [0.2.03] - 2023-12-21
+
+### Added
+- YARD documentation for the `ParseNode` hierarchy.
+- Classes `Token` and `Literal` added the predicate method `literal?`
+
+### Changed
+- Class rename: `ANDNode` became `AndNode`
+- Class `ParseNode`: method rename: `ParseNode#to_s` became `ParseNode#range_to_s`
+- Class `ParseNode`: attribute `range` is now of type `Range` 
+
 ## [0.2.02] - 2023-12-18
 Code re-styling to fix most Rubocop offenses.
 

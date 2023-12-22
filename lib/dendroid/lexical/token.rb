@@ -41,6 +41,11 @@ module Dendroid
       def pos_to_s
         position.to_s
       end
+
+      # @return [Boolean] true if the token is a literal (has a value associated with is)
+      def literal?
+        false
+      end
     end # class
   end # module
 end # module

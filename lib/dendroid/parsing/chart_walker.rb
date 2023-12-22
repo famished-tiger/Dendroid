@@ -27,11 +27,11 @@ module Dendroid
           # Create n times start_item as predecessors, then for each path initialize to its unique own predecessor
           forerunners = disambiguate(progress, start_item.predecessors)
           if forerunners.size == 1
-            parents << ANDNode.new(start_item, curr_rank)
+            parents << AndNode.new(start_item, curr_rank)
           else
             preds = sort_predecessors(forerunners)
             if start_item.rule.rhs.size == 1
-              parents << ANDNode.new(start_item, curr_rank)
+              parents << AndNode.new(start_item, curr_rank)
               progress.push_or_node(start_item.origin, preds.size)
             else
               parents << OrNode.new(start_item.lhs, start_item.origin, curr_rank, preds.size)
@@ -40,7 +40,7 @@ module Dendroid
             fork(progress, paths, preds)
           end
         else
-          parents << ANDNode.new(start_item, curr_rank)
+          parents << AndNode.new(start_item, curr_rank)
         end
         token2node = {}
         entry2node = {}

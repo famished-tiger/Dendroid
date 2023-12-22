@@ -16,7 +16,11 @@ describe Dendroid::Lexical::Literal do
       expect { described_class.new(ex_source, ex_pos, ex_terminal, ex_value) }.not_to raise_error
     end
 
-    it 'knows its value' do
+    it 'knows it is a token with a literal value attached to it' do
+      expect(subject).to be_literal
+    end
+
+    it 'knows its literal value' do
       expect(subject.value).to eq(ex_value)
     end
   end # context

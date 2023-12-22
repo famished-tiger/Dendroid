@@ -21,7 +21,7 @@ module Dendroid
     # An item with the dot not at the beginning is sometimes referred to as a kernel item
     class DottedItem
       # (Weak) reference to the production rule
-      # @return [Dendroid::Syntax::Production]
+      # @return [Dendroid::Syntax::Rule]
       attr_reader :rule
 
       # @return [Integer] the dot position
@@ -31,12 +31,12 @@ module Dendroid
       attr_reader :alt_index
 
       # Constructor.
-      # @param aChoice [Dendroid::Syntax::Rule]
+      # @param aRule[Dendroid::Syntax::Rule]
       # @param aPosition [Integer] Position of the dot in rhs of production.
       # @param index [Integer] the rank of the alternative at hand
-      def initialize(aChoice, aPosition, index)
+      def initialize(aRule, aPosition, index)
         @alt_index = index
-        @rule = WeakRef.new(aChoice)
+        @rule = WeakRef.new(aRule)
         @position = valid_position(aPosition)
       end
 

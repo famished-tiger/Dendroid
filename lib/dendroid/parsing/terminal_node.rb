@@ -4,6 +4,7 @@ require_relative 'parse_node'
 
 module Dendroid
   module Parsing
+    # A parse tree/forest node that is related to one input token.
     class TerminalNode < ParseNode
       # @return [Dendroid::Syntax::Terminal] Terminal symbol of matching token.
       attr_reader :symbol
@@ -23,9 +24,11 @@ module Dendroid
         aVisitor.visit_terminal(self)
       end
 
+      # Render a String representation of itself
+      # @return [String]
       def to_s
-        display_val = token.is_a?(Dendroid::Lexical::Literal) ? ": #{token.value}" : ''
-        "#{symbol.name}#{display_val} #{super}"
+        display_val = token.literal? ? ": #{token.value}" : ''
+        "#{symbol.name}#{display_val} #{range_to_s}"
       end
     end # class
   end # module
