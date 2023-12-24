@@ -2,6 +2,16 @@
 
 ## [Unreleased]
 
+## [0.2.04] - 2023-12-24
+Some code refactoring.
+
+### Added
+- File `walk_progress_spec.rb`
+
+### Changed
+- Class `WalkProgress` refactoring & documentation
+- Class `ChartWalker` refactoring & documentation
+
 ## [0.2.03] - 2023-12-21
 
 ### Added

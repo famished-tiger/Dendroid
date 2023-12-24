@@ -5,14 +5,6 @@ require_relative '../support/sample_grammars'
 require_relative '../../../lib/dendroid/recognizer/recognizer'
 require_relative '../../../lib/dendroid/parsing/chart_walker'
 
-# require_relative '../grm_dsl/base_grm_builder'
-# require_relative '../utils/base_tokenizer'
-# require_relative '../recognizer/recognizer'
-# require_relative 'chart_walker'
-# require_relative 'parse_tree_visitor'
-# require_relative '../formatters/bracket_notation'
-# require_relative '../formatters/ascii_tree'
-
 RSpec.describe Dendroid::Parsing::ChartWalker do
   include SampleGrammars
 

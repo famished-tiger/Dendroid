@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require_relative 'and_node.rb'
+require_relative 'and_node'
 require_relative 'or_node'
 require_relative 'terminal_node'
 require_relative 'empty_rule_node'
@@ -10,9 +10,9 @@ module Dendroid
     # This object holds the current state of the visit of a Chart by one
     # ChartWalker through one single visit path. A path corresponds to a
     # chain from the current item back to the initial item(s) through the predecessors links.
-    # It is used to construct (part of) the parse tree from the root node.
+    # It is used to construct (part of) the parse tree beginning from the root node.
     class WalkProgress
-      # @return [Symbol] One of: :New, :Forking,
+      # @return [Symbol] One of: :New, :Running, :Waiting, :Complete, :Forking, :Delegating
       attr_accessor :state
 
       # @return [Integer] rank of the item set from the chart being visited
@@ -27,9 +27,6 @@ module Dendroid
 
       # @return [Array<Dendroid::Parsing::CompositeParseNode>] The ancestry of current parse node.
       attr_reader :parents
-
-      # rubocop: disable Metrics/CyclomaticComplexity
-      # rubocop: disable Metrics/PerceivedComplexity
 
       # @param start_rank [Integer] Initial rank at the start of the visit
       # @param start_item [Dendroid::Recognizer::EItem] Initial chart entry to visit
@@ -116,15 +113,18 @@ module Dendroid
       # @param aNode [Dendroid::Parsing::ParseNode]
       # @return [Dendroid::Parsing::ParseNode]
       def add_child_node(aNode)
-        parents.last.add_child(aNode, curr_item.position - 1)
+        parents.last.add_child(aNode, curr_item.position - 1) unless parents.empty?
         aNode
       end
+
+      # rubocop: disable Metrics/CyclomaticComplexity
+      # rubocop: disable Metrics/PerceivedComplexity
 
       # Do the given EItems match one of the parent?
       # Matching = corresponds to the same rule and range
       # @param entries [Dendroid::Recognizer::EItem]
       # @param stop_at_first [Boolean] Must be true
-      # @return [Array<EItem>]
+      # @return [Array<Array<EItem, Integer>>]
       def match_parent?(entries, stop_at_first)
         matching = []
         min_origin = entries[0].origin
