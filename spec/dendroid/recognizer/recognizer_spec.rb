@@ -7,15 +7,24 @@ require_relative '../../../lib/dendroid/recognizer/recognizer'
 describe Dendroid::Recognizer::Recognizer do
   include SampleGrammars
   let(:grammar1) { grammar_l1 }
+  # Implements a dotted item: expression => NUMBER . PLUS NUMBER
+  subject { described_class.new(grammar1, tokenizer_l1) }
 
   def comp_expected_actuals(chart, expectations)
     expectations.each_with_index do |set, rank|
-      expect(chart[rank].to_s).to eq(set.join("\n"))
+      chart[rank].items.each_with_index do |entry, i|
+        if set[i].is_a?(String)
+          expect(entry.to_s).to eq(set[i])
+        else
+          # Array format: [entry as String, algo, [predecessors]]
+          (exp_str, exp_algo, exp_preds) = set[i]
+          expect(entry.to_s).to eq(exp_str)
+          expect(entry.algo).to eq(exp_algo)
+          expect(entry.predecessors.map(&:to_s)).to eq(exp_preds)
+        end
+      end
     end
   end
-
-  # Implements a dotted item: expression => NUMBER . PLUS NUMBER
-  subject { described_class.new(grammar1, tokenizer_l1) }
 
   context 'Initialization:' do
     it 'is initialized with a grammar' do
@@ -36,9 +45,11 @@ describe Dendroid::Recognizer::Recognizer do
   context 'Recognizer at work:' do
     it 'can recognize example from Wikipedia' do
       chart = subject.run('2 + 3 * 4')
-      expect(chart).to be_successful
+      expect(chart.start_symbol.name).to eq(:p)
+      expect(chart).to be_success
 
       set0 = [ # . 2 + 3 * 4'
+        '. p',
         'p => . s @ 0',
         's => . s PLUS m @ 0',
         's => . m @ 0',
@@ -77,20 +88,37 @@ describe Dendroid::Recognizer::Recognizer do
         'm => m STAR t . @ 2',
         's => s PLUS m . @ 0',
         # 'm => m . STAR t @ 2',
-        'p => s . @ 0'
+        'p => s . @ 0',
         # 's => s . PLUS m @ 0'
+        ['p .', :completer, ['p => s . @ 0']]
       ]
-      [set0, set1, set2, set3, set4, set5].each_with_index do |set, rank|
-        expect(chart[rank].to_s).to eq(set.join("\n"))
-      end
+      expectations = [set0, set1, set2, set3, set4, set5]
+      comp_expected_actuals(chart, expectations)
+    end
+
+    it 'can recognize an empty input (when allowed)' do
+      recognizer = described_class.new(grammar_l10, tokenizer_l10)
+      chart = recognizer.run('')
+      expect(chart).to be_success
+
+      set0 = [
+        '. A',
+        'A => . A a @ 0',
+        ['A => . @ 0', :predictor, ['A => . A a @ 0', '. A']],
+        ['A => A . a @ 0', :completer, ['A => . @ 0']],
+        ['A .', :completer, ['A => . @ 0']]
+      ]
+      expectations = [set0]
+      comp_expected_actuals(chart, expectations)
     end
 
     it 'can recognize example for L2 language' do
       recognizer = described_class.new(grammar_l2, tokenizer_l2)
       chart = recognizer.run('1 + (2 * 3 - 4)')
-      expect(chart).to be_successful
+      expect(chart).to be_success
 
       set0 = [ # . 1 + (2 * 3 - 4)
+        '. p',
         'p => . sum @ 0',
         'sum => . sum PLUS product @ 0',
         'sum => . sum MINUS product @ 0',
@@ -179,14 +207,13 @@ describe Dendroid::Recognizer::Recognizer do
         'sum => sum PLUS product . @ 0',
         # 'product => product . STAR factor @ 2',
         # 'product => product . SLASH factor @ 2',
-        'p => sum . @ 0'
+        'p => sum . @ 0',
         # 'sum => sum . PLUS product @ 0',
         # 'sum => sum . MINUS product @ 0'
+        ['p .', :completer, ['p => sum . @ 0']]
       ]
       expectations = [set0, set1, set2, set3, set4, set5, set6, set7, set8, set9]
-      expectations.each_with_index do |set, rank|
-        expect(chart[rank].to_s).to eq(set.join("\n"))
-      end
+      comp_expected_actuals(chart, expectations)
     end
   end # context
 
@@ -194,9 +221,10 @@ describe Dendroid::Recognizer::Recognizer do
     it 'can cope with an empty rule' do
       recognizer = described_class.new(grammar_l7, tokenizer_l7)
       chart = recognizer.run('a a')
-      expect(chart).to be_successful
+      expect(chart).to be_success
 
       set0 = [ # . a a
+        '. S',
         'S => . S T @ 0',
         'S => . a @ 0'
       ]
@@ -212,9 +240,10 @@ describe Dendroid::Recognizer::Recognizer do
         'B => . @ 2',
         'T => a B . @ 1',
         'S => S T . @ 0',
-        'S => S . T @ 0'
+        'S => S . T @ 0',
         # 'T => . a B @ 2',
         # 'T => . a @ 2'
+        ['S .', :completer, ['S => S T . @ 0']]
       ]
 
       expectations = [set0, set1, set2]
@@ -224,9 +253,10 @@ describe Dendroid::Recognizer::Recognizer do
     it 'can cope with a nullable symbol' do
       recognizer = described_class.new(grammar_l14, tokenizer_l14)
       chart = recognizer.run('a a / a')
-      expect(chart).to be_successful
+      expect(chart).to be_success
 
       set0 = [ # . a a / a
+        '. S',
         'S => . E @ 0',
         'E => . E Q F @ 0',
         'E => . F @ 0',
@@ -267,8 +297,9 @@ describe Dendroid::Recognizer::Recognizer do
         # 'Q => . star @ 4',
         # 'Q => . slash @ 4',
         'Q => . @ 4',
-        'E => E Q . F @ 0'
+        'E => E Q . F @ 0',
         # 'F => . a @ 4'
+        ['S .', :completer, ['S => E . @ 0']]
       ]
       expectations = [set0, set1, set2, set3, set4]
       comp_expected_actuals(chart, expectations)
@@ -279,9 +310,11 @@ describe Dendroid::Recognizer::Recognizer do
     it 'can handle ambiguous input (I)' do
       recognizer = described_class.new(grammar_l31, tokenizer_l1)
       chart = recognizer.run('2 + 3 * 4')
-      expect(chart).to be_successful
+      expect(chart.start_symbol.name).to eq(:p)
+      expect(chart).to be_success
 
       set0 = [ # . 2 + 3 * 4
+        '. p',
         'p => . s @ 0',
         's => . s PLUS s @ 0',
         's => . s STAR s @ 0',
@@ -324,9 +357,10 @@ describe Dendroid::Recognizer::Recognizer do
         's => s PLUS s . @ 0',
         # 's => s . PLUS s @ 2',
         # 's => s . STAR s @ 2',
-        'p => s . @ 0'
+        'p => s . @ 0',
         # 's => s . PLUS s @ 0',
         # 's => s . STAR s @ 0'
+        ['p .', :completer, ['p => s . @ 0']]
       ]
       expectations = [set0, set1, set2, set3, set4, set5]
       comp_expected_actuals(chart, expectations)
@@ -335,9 +369,10 @@ describe Dendroid::Recognizer::Recognizer do
     it 'can handle ambiguous input (II)' do
       recognizer = described_class.new(grammar_l4, tokenizer_l4)
       chart = recognizer.run('abc + def + ghi')
-      expect(chart).to be_successful
+      expect(chart).to be_success
 
       set0 = [ # . abc + def + ghi
+        '. S',
         'S => . E @ 0',
         'E => . E plus E @ 0',
         'E => . id @ 0'
@@ -372,8 +407,9 @@ describe Dendroid::Recognizer::Recognizer do
         'E => E plus E . @ 0',
         # 'E => E . plus E @ 4',
         # 'E => E . plus E @ 2',
-        'S => E . @ 0'
+        'S => E . @ 0',
         # 'E => E . plus E @ 0'
+        ['S .', :completer, ['S => E . @ 0']]
       ]
       expectations = [set0, set1, set2, set3, set4, set5]
       comp_expected_actuals(chart, expectations)
@@ -382,15 +418,16 @@ describe Dendroid::Recognizer::Recognizer do
     it 'copes with the dangling else ambiguity' do
       recognizer = described_class.new(grammar_l6, tokenizer_l6)
       chart = recognizer.run('if E then if E then other else other')
-      expect(chart).to be_successful
+      expect(chart).to be_success
     end
 
     it 'swallows an input that failed with the Earley parsing approach' do
       recognizer = described_class.new(grammar_l8, tokenizer_l8)
       chart = recognizer.run('x x x')
-      expect(chart).to be_successful
+      expect(chart).to be_success
 
       set0 = [ # . x x x
+        '. S',
         'S => . S S @ 0',
         'S => . x @ 0'
       ]
@@ -415,8 +452,9 @@ describe Dendroid::Recognizer::Recognizer do
         'S => S . S @ 2',
         'S => S . S @ 1',
         'S => S . S @ 0',
-        'S => . S S @ 3'
+        'S => . S S @ 3',
         # 'S => . x @ 3'
+        ['S .', :completer, ['S => S S . @ 0']]
       ]
       expectations = [set0, set1, set2, set3]
       comp_expected_actuals(chart, expectations)
@@ -425,25 +463,26 @@ describe Dendroid::Recognizer::Recognizer do
     it 'accepts an input with multiple levels of ambiguity' do
       recognizer = described_class.new(grammar_l8, tokenizer_l8)
       chart = recognizer.run('x x x x')
-      expect(chart).to be_successful
+      expect(chart).to be_success
 
       set0 = [ # . x x x x
-        'S => . S S @ 0',
-        'S => . x @ 0'
+        '. S',
+        ['S => . S S @ 0', :predictor, ['S => . S S @ 0', '. S']],
+        ['S => . x @ 0', :predictor, ['S => . S S @ 0', '. S']]
       ]
       set1 = [ # x . x x x
-        'S => x . @ 0',
-        'S => S . S @ 0',
-        'S => . S S @ 1',
-        'S => . x @ 1'
+        ['S => x . @ 0', :scanner, ['S => . x @ 0']],
+        ['S => S . S @ 0', :completer, ['S => x . @ 0']],
+        ['S => . S S @ 1', :predictor, ['S => . S S @ 1', 'S => S . S @ 0']],
+        ['S => . x @ 1', :predictor, ['S => . S S @ 1', 'S => S . S @ 0']]
       ]
       set2 = [ # x x . x x
-        'S => x . @ 1',
-        'S => S S . @ 0',
-        'S => S . S @ 1',
-        'S => S . S @ 0',
-        'S => . S S @ 2',
-        'S => . x @ 2'
+        ['S => x . @ 1', :scanner, ['S => . x @ 1']],
+        ['S => S S . @ 0', :completer, ['S => x . @ 1']],
+        ['S => S . S @ 1', :completer, ['S => x . @ 1']],
+        ['S => S . S @ 0', :completer, ['S => S S . @ 0']],
+        ['S => . S S @ 2', :predictor, ['S => . S S @ 2', 'S => S . S @ 0', 'S => S . S @ 1']],
+        ['S => . x @ 2', :predictor, ['S => . S S @ 2', 'S => S . S @ 0', 'S => S . S @ 1']]
       ]
       set3 = [ # x x x . x
         'S => x . @ 2',
@@ -464,7 +503,8 @@ describe Dendroid::Recognizer::Recognizer do
         'S => S . S @ 2',
         'S => S . S @ 1',
         'S => S . S @ 0',
-        'S => . S S @ 4'
+        'S => . S S @ 4',
+        ['S .', :completer, ['S => S S . @ 0']]
       ]
       expectations = [set0, set1, set2, set3, set4]
       comp_expected_actuals(chart, expectations)
@@ -473,14 +513,15 @@ describe Dendroid::Recognizer::Recognizer do
     it 'swallows the input from an infinite ambiguity grammar' do
       recognizer = described_class.new(grammar_l9, tokenizer_l9)
       chart = recognizer.run('x x x')
-      expect(chart).to be_successful
+      expect(chart).to be_success
 
       set0 = [ # . x x x
-        'S => . S S @ 0',
-        'S => . @ 0',
-        'S => . x @ 0',
-        'S => S . S @ 0',
-        'S => S S . @ 0'
+        '. S',
+        ['S => . S S @ 0', :predictor, ['S => S . S @ 0', 'S => . S S @ 0', '. S']],
+        ['S => . @ 0', :predictor, ['S => S . S @ 0', 'S => . S S @ 0', '. S']],
+        ['S => . x @ 0', :predictor, ['S => S . S @ 0', 'S => . S S @ 0', '. S']],
+        ['S => S . S @ 0', :completer, ['S => S S . @ 0', 'S => . @ 0']],
+        ['S => S S . @ 0', :completer, ["S => S S . @ 0", "S => . @ 0"]]
       ]
       set1 = [ # x . x x
         'S => x . @ 0',
@@ -516,7 +557,8 @@ describe Dendroid::Recognizer::Recognizer do
         'S => . @ 3',
         # 'S => . x @ 3',
         'S => S . S @ 3',
-        'S => S S . @ 3'
+        'S => S S . @ 3',
+        ['S .', :completer, ['S => S S . @ 0']]
       ]
       expectations = [set0, set1, set2, set3]
       comp_expected_actuals(chart, expectations)
@@ -527,9 +569,10 @@ describe Dendroid::Recognizer::Recognizer do
     it 'can handle left-recursion' do
       recognizer = described_class.new(grammar_l10, tokenizer_l10)
       chart = recognizer.run('a a a a a')
-      expect(chart).to be_successful
+      expect(chart).to be_success
 
       set0 = [ # . a a a a a
+        '. A',
         'A => . A a @ 0',
         'A => . @ 0',
         'A => A . a @ 0'
@@ -551,8 +594,9 @@ describe Dendroid::Recognizer::Recognizer do
         'A => A . a @ 0'
       ]
       set5 = [ # a a a a a .
-        'A => A a . @ 0'
+        'A => A a . @ 0',
         # 'A => A . a @ 0'
+        ['A .', :completer, ['A => A a . @ 0']]
       ]
       expectations = [set0, set1, set2, set3, set4, set5]
       comp_expected_actuals(chart, expectations)
@@ -561,23 +605,24 @@ describe Dendroid::Recognizer::Recognizer do
     it 'supports right-recursive rules' do
       recognizer = described_class.new(grammar_l11, tokenizer_l11)
       chart = recognizer.run('a a a a a')
-      expect(chart).to be_successful
+      expect(chart).to be_success
       set0 = [ # . a a a a a
-        'A => . a A @ 0',
-        'A => . @ 0'
+        '. A',
+        ['A => . a A @ 0', :predictor, ['. A']],
+        ['A => . @ 0', :predictor, ['. A']]
       ]
       set1 = [ # a . a a a a
-        'A => a . A @ 0',
-        'A => . a A @ 1',
-        'A => . @ 1',
-        'A => a A . @ 0'
+        ['A => a . A @ 0', :scanner, ['A => . a A @ 0']],
+        ['A => . a A @ 1', :predictor, ['A => a . A @ 0']],
+        ['A => . @ 1', :predictor, ['A => a . A @ 0']],
+        ['A => a A . @ 0', :completer, ['A => . @ 1']]
       ]
       set2 = [ # a a . a a a
-        'A => a . A @ 1',
-        'A => . a A @ 2',
-        'A => . @ 2',
-        'A => a A . @ 1',
-        'A => a A . @ 0'
+        ['A => a . A @ 1', :scanner, ['A => . a A @ 1']],
+        ['A => . a A @ 2', :predictor, ['A => a . A @ 1']],
+        ['A => . @ 2', :predictor, ['A => a . A @ 1']],
+        ['A => a A . @ 1', :completer, ['A => . @ 2']],
+        ['A => a A . @ 0', :completer, ['A => a A . @ 1']]
       ]
       set3 = [ # a a a . a a
         'A => a . A @ 2',
@@ -604,7 +649,8 @@ describe Dendroid::Recognizer::Recognizer do
         'A => a A . @ 3',
         'A => a A . @ 2',
         'A => a A . @ 1',
-        'A => a A . @ 0'
+        'A => a A . @ 0',
+        ['A .', :completer, ['A => a A . @ 0']]
       ]
       expectations = [set0, set1, set2, set3, set4, set5]
       comp_expected_actuals(chart, expectations)
@@ -613,8 +659,9 @@ describe Dendroid::Recognizer::Recognizer do
     it 'supports mid-recursive rules' do
       recognizer = described_class.new(grammar_l5, tokenizer_l5)
       chart = recognizer.run('a a b c c')
-      expect(chart).to be_successful
+      expect(chart).to be_success
       set0 = [ # . a a b c c
+        '. S',
         'S => . A @ 0',
         'A => . a A c @ 0'
         # 'A => . b @ 0'
@@ -639,7 +686,8 @@ describe Dendroid::Recognizer::Recognizer do
       ]
       set5 = [ # a a b c c .
         'A => a A c . @ 0',
-        'S => A . @ 0'
+        'S => A . @ 0',
+        ['S .', :completer, ['S => A . @ 0']]
       ]
       expectations = [set0, set1, set2, set3, set4, set5]
       comp_expected_actuals(chart, expectations)
@@ -648,33 +696,35 @@ describe Dendroid::Recognizer::Recognizer do
     it 'can handle hidden left-recursion' do
       recognizer = described_class.new(grammar_l12, tokenizer_l12)
       chart = recognizer.run('a b b b')
-      expect(chart).to be_successful
+      expect(chart).to be_success
 
       set0 = [ # . a b b b
+        '. S',
         'S => . A T @ 0',
         'S => . a T @ 0',
-        'A => . a @ 0',
-        'A => . B A @ 0',
-        'B => . @ 0',
-        'A => B . A @ 0'
+        ['A => . a @ 0', :predictor, ['A => B . A @ 0', 'S => . A T @ 0']],
+        ['A => . B A @ 0', :predictor, ['A => B . A @ 0', 'S => . A T @ 0']],
+        ['B => . @ 0', :predictor, ['A => . B A @ 0']],
+        ['A => B . A @ 0', :completer, ['B => . @ 0']]
       ]
       set1 = [ # a . b b b
-        'S => a . T @ 0',
-        'A => a . @ 0',
-        'T => . b b b @ 1',
-        'S => A . T @ 0',
-        'A => B A . @ 0'
+        ['S => a . T @ 0', :scanner, ['S => . a T @ 0']],
+        ['A => a . @ 0', :scanner, ['A => . a @ 0']],
+        ['T => . b b b @ 1', :predictor, ['S => A . T @ 0', 'S => a . T @ 0']],
+        ['S => A . T @ 0', :completer, ['A => B A . @ 0', 'A => a . @ 0']],
+        ['A => B A . @ 0', :completer, ['A => B A . @ 0', 'A => a . @ 0']] # Self-loop!
       ]
       set2 = [ # a b . b b
-        'T => b . b b @ 1'
+        ['T => b . b b @ 1', :scanner, ['T => . b b b @ 1']]
       ]
       set3 = [ # a b b . b
-        'T => b b . b @ 1'
+        ['T => b b . b @ 1', :scanner, ['T => b . b b @ 1']]
       ]
       set4 = [ # a b b b .
-        'T => b b b . @ 1',
-        'S => a T . @ 0',
-        'S => A T . @ 0'
+        ['T => b b b . @ 1', :scanner, ['T => b b . b @ 1']],
+        ['S => a T . @ 0', :completer, ['T => b b b . @ 1']],
+        ['S => A T . @ 0', :completer, ['T => b b b . @ 1']],
+        ['S .', :completer, ['S => a T . @ 0', 'S => A T . @ 0']]
       ]
       expectations = [set0, set1, set2, set3, set4]
       comp_expected_actuals(chart, expectations)
@@ -683,8 +733,9 @@ describe Dendroid::Recognizer::Recognizer do
     it 'can handle right-recursion (II)' do
       recognizer = described_class.new(grammar_l13, tokenizer_l13)
       chart = recognizer.run('x x x')
-      expect(chart).to be_successful
+      expect(chart).to be_success
       set0 = [ # . x x x
+        '. A',
         'A => . x A @ 0',
         'A => . x @ 0'
       ]
@@ -707,9 +758,135 @@ describe Dendroid::Recognizer::Recognizer do
         # 'A => . x A @ 3',
         # 'A => . x @ 3',
         'A => x A . @ 1',
-        'A => x A . @ 0'
+        'A => x A . @ 0',
+        ['A .', :completer, ['A => x A . @ 0']]
       ]
       expectations = [set0, set1, set2, set3]
+      comp_expected_actuals(chart, expectations)
+    end
+
+    it 'Recognizes a string from the ambiguous l17 grammar' do
+      recognizer = described_class.new(grammar_l17, tokenizer_l17)
+      chart = recognizer.run('x x')
+      expect(chart).to be_success
+      set0 = [ # . x x
+        '. S',
+        ['S => . S S x @ 0', :predictor, ['S => S . S x @ 0', 'S => . S S x @ 0', '. S']],
+        ['S => . @ 0', :predictor, ['S => S . S x @ 0', 'S => . S S x @ 0', '. S']],
+        ['S => S . S x @ 0', :completer, ['S => . @ 0']],
+        ['S => S S . x @ 0', :completer, ['S => . @ 0']]
+      ]
+      set1 = [ # x . x
+        ['S => S S x . @ 0', :scanner, ['S => S S . x @ 0']],
+        ['S => S . S x @ 0', :completer, ['S => S S x . @ 0']],
+        ['S => S S . x @ 0', :completer, ['S => . @ 1', 'S => S S x . @ 0']],
+        ['S => . S S x @ 1', :predictor, ['S => S . S x @ 1', 'S => . S S x @ 1', 'S => S . S x @ 0']],
+        ['S => . @ 1', :predictor, ['S => S . S x @ 1', 'S => . S S x @ 1', 'S => S . S x @ 0']],
+        # ['S => S S . x @ 0', :completer, ['S => . @ 1']],
+        ['S => S . S x @ 1', :completer, ['S => . @ 1']],
+        ['S => S S . x @ 1', :completer, ['S => . @ 1']]
+      ]
+      set2 = [ # x x .
+        ['S => S S x . @ 0', :scanner, ['S => S S . x @ 0']],
+        ['S => S S x . @ 1', :scanner, ['S => S S . x @ 1']],
+        ['S => S . S x @ 0', :completer, ['S => S S x . @ 0']],
+        ['S => S . S x @ 1', :completer, ['S => S S x . @ 1']],
+        ['S => . S S x @ 2', :predictor, ['S => S . S x @ 2', 'S => . S S x @ 2', 'S => S . S x @ 1', 'S => S . S x @ 0']],
+        ['S => . @ 2', :predictor, ['S => S . S x @ 2', 'S => . S S x @ 2', 'S => S . S x @ 1', 'S => S . S x @ 0']],
+        ['S => S S . x @ 0', :completer, ['S => . @ 2']],
+        ['S => S S . x @ 1', :completer, ['S => . @ 2']],
+        ['S => S . S x @ 2', :completer, ['S => . @ 2']],
+        ['S => S S . x @ 2', :completer, ['S => . @ 2']],
+        ['S .', :completer, ['S => S S x . @ 0', ]]
+      ]
+      # TODO add set2 & compare with nibblebit.dev visualizer
+      expectations = [set0 , set1, set2]
+      comp_expected_actuals(chart, expectations)
+    end
+
+    it 'Recognizes a string from the ambiguous G2 grammar (shorter)' do
+      recognizer = described_class.new(grammar_l8, tokenizer_l8)
+      chart = recognizer.run('x x x')
+      expect(chart).to be_success
+      set0 = [ # . x x x
+        '. S',
+        ['S => . S S @ 0', :predictor, ['S => . S S @ 0', '. S']],
+        ['S => . x @ 0', :predictor, ['S => . S S @ 0', '. S']]
+      ]
+      set1 = [ # x . x x
+        ['S => x . @ 0', :scanner, ['S => . x @ 0']],
+        ['S => S . S @ 0', :completer, ['S => x . @ 0']],
+        ['S => . S S @ 1', :predictor, ['S => . S S @ 1', 'S => S . S @ 0']],
+        ['S => . x @ 1', :predictor, ['S => . S S @ 1', 'S => S . S @ 0']]
+      ]
+      set2 = [ # x x . x
+        ['S => x . @ 1', :scanner, ['S => . x @ 1']],
+        ['S => S S . @ 0', :completer, ['S => x . @ 1']],
+        ['S => S . S @ 1', :completer, ['S => x . @ 1']],
+        ['S => S . S @ 0', :completer, ['S => S S . @ 0']],
+        ['S => . S S @ 2', :predictor, ['S => . S S @ 2', 'S => S . S @ 0', 'S => S . S @ 1']],
+        ['S => . x @ 2', :predictor, ['S => . S S @ 2', 'S => S . S @ 0', 'S => S . S @ 1']]
+      ]
+      set3 = [ # x x x .
+        ['S => x . @ 2', :scanner, ['S => . x @ 2']],
+        ['S => S S . @ 1', :completer, ['S => x . @ 2']],
+        ['S => S S . @ 0', :completer, ['S => S S . @ 1', 'S => x . @ 2']],
+        ['S => S . S @ 2', :completer, ['S => x . @ 2']],
+        ['S => S . S @ 1', :completer, ['S => S S . @ 1']],
+        ['S => S . S @ 0', :completer, ['S => S S . @ 0']],
+        ['S => . S S @ 3', :predictor, ['S => . S S @ 3', 'S => S . S @ 1', 'S => S . S @ 2', 'S => S . S @ 0']],
+        ['S .', :completer, ['S => S S . @ 0']]
+      ]
+      expectations = [set0, set1, set2, set3]
+      comp_expected_actuals(chart, expectations)
+    end
+
+    it "Recognizes a string from the ambiguous G2 grammar (longer)" do
+      recognizer = described_class.new(grammar_l8, tokenizer_l8)
+      chart = recognizer.run('x x x x')
+      expect(chart).to be_success
+      set0 = [ # . x x x x
+        '. S',
+        ['S => . S S @ 0', :predictor, ['S => . S S @ 0', '. S']],
+        ['S => . x @ 0', :predictor, ['S => . S S @ 0', '. S']]
+      ]
+      set1 = [ # x . x x x
+        ['S => x . @ 0', :scanner, ['S => . x @ 0']],
+        ['S => S . S @ 0', :completer, ['S => x . @ 0']],
+        ['S => . S S @ 1', :predictor, ['S => . S S @ 1', 'S => S . S @ 0']],
+        ['S => . x @ 1', :predictor, ['S => . S S @ 1', 'S => S . S @ 0']]
+      ]
+      set2 = [ # x x . x x
+        ['S => x . @ 1', :scanner, ['S => . x @ 1']],
+        ['S => S S . @ 0', :completer, ['S => x . @ 1']],
+        ['S => S . S @ 1', :completer, ['S => x . @ 1']],
+        ['S => S . S @ 0', :completer, ['S => S S . @ 0']],
+        ['S => . S S @ 2', :predictor, ['S => . S S @ 2', 'S => S . S @ 0', 'S => S . S @ 1']],
+        ['S => . x @ 2', :predictor, ['S => . S S @ 2', 'S => S . S @ 0', 'S => S . S @ 1']]
+      ]
+      set3 = [ # x x x . x
+        ['S => x . @ 2', :scanner, ['S => . x @ 2']],
+        ['S => S S . @ 1', :completer, ['S => x . @ 2']],
+        ['S => S S . @ 0', :completer, ['S => S S . @ 1', 'S => x . @ 2']],
+        ['S => S . S @ 2', :completer, ['S => x . @ 2']],
+        ['S => S . S @ 1', :completer, ['S => S S . @ 1']],
+        ['S => S . S @ 0', :completer, ['S => S S . @ 0']],
+        ['S => . S S @ 3', :predictor, ['S => . S S @ 3', 'S => S . S @ 1', 'S => S . S @ 2', 'S => S . S @ 0']],
+        ['S => . x @ 3', :predictor, ['S => . S S @ 3', 'S => S . S @ 1', 'S => S . S @ 2', 'S => S . S @ 0']]
+      ]
+      set4 = [ # x x x x .
+        ['S => x . @ 3', :scanner, ['S => . x @ 3']],
+        ['S => S S . @ 2', :completer, ['S => x . @ 3']],
+        ['S => S S . @ 1', :completer, ['S => S S . @ 2', 'S => x . @ 3']],
+        ['S => S S . @ 0', :completer, ['S => S S . @ 2', 'S => x . @ 3', 'S => S S . @ 1']],
+        ['S => S . S @ 3', :completer, ['S => x . @ 3']],
+        ['S => S . S @ 2', :completer, ['S => S S . @ 2']],
+        ['S => S . S @ 1', :completer, ['S => S S . @ 1']],
+        ['S => S . S @ 0', :completer, ['S => S S . @ 0']],
+        ['S => . S S @ 4', :predictor, ['S => . S S @ 4', 'S => S . S @ 2', 'S => S . S @ 3', 'S => S . S @ 0', 'S => S . S @ 1']],
+        ['S .', :completer, ['S => S S . @ 0']]
+      ]
+      expectations = [set0, set1, set2, set3, set4]
       comp_expected_actuals(chart, expectations)
     end
 
@@ -723,7 +900,7 @@ describe Dendroid::Recognizer::Recognizer do
       recognizer = described_class.new(grammar_l5, tokenizer_l5)
       # Parse an erroneous input (b is missing)
       chart = recognizer.run('a a c c')
-      expect(chart).not_to be_successful
+      expect(chart).not_to be_success
 
       # TODO
       #       err_msg = <<-MSG
@@ -741,7 +918,7 @@ describe Dendroid::Recognizer::Recognizer do
 
       ['', "  \t  \n"].each do |input|
         chart = recognizer.run(input)
-        expect(chart).not_to be_successful
+        expect(chart).not_to be_success
         expect(chart.failure_class).to eq(StandardError)
         expect(chart.failure_reason).to eq(err_msg)
       end
@@ -750,8 +927,9 @@ describe Dendroid::Recognizer::Recognizer do
     it 'raises an error if encounters an unexpected token' do
       recognizer = described_class.new(grammar_l5, tokenizer_l5)
       chart = recognizer.run('a a c c')
-      expect(chart).not_to be_successful
+      expect(chart).not_to be_success
       set0 = [ # . a a c c
+        '. S',
         'S => . A @ 0',
         'A => . a A c @ 0'
         # 'A => . b @ 0'
@@ -777,8 +955,9 @@ describe Dendroid::Recognizer::Recognizer do
     it "reports an error when last token isn't final state" do
       recognizer = described_class.new(grammar_l5, tokenizer_l5)
       chart = recognizer.run('aabc')
-      expect(chart).not_to be_successful
+      expect(chart).not_to be_success
       set0 = [ # . a a b c
+        '. S',
         'S => . A @ 0',
         'A => . a A c @ 0'
         # 'A => . b @ 0'
