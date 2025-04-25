@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 require_relative '../grm_analysis/grm_analyzer'
+require_relative 'start_item'
+require_relative 'success_item'
 require_relative 'e_item'
 require_relative 'chart'
 
@@ -33,22 +35,26 @@ module Dendroid
       def run(source)
         tokenizer.input = source
         tok = tokenizer.next_token
-        if tok.nil? && !grm_analysis.grammar.start_symbol.nullable?
-          chart = new_chart
-          chart.failure(StandardError, 'Error: Input may not be empty nor blank.')
-          chart
+        if tok.nil? # Empty input ?...
+          if grm_analysis.grammar.start_symbol.nullable?
+            earley_parse(nil)
+          else
+            chart = new_chart
+            chart.failure(StandardError, 'Error: Input may not be empty nor blank.')
+            chart
+          end
         else
           earley_parse(tok)
         end
       end
 
       # Run the Earley algorithm
-      # @param initial_token [Dendroid::Lexical::Token]
+      # @param initial_token [Dendroid::Lexical::Token|NilClass]
       def earley_parse(initial_token)
         chart = new_chart
-        tokens = [initial_token]
-        predicted_symbols = [Set.new]
+        tokens = initial_token.nil? ? [] : [initial_token]
         eos_reached = initial_token.nil?
+        predicted_symbols = [Set.new]
         rank = 0
 
         loop do
@@ -69,6 +75,7 @@ module Dendroid
         end
 
         chart.tokens = tokens
+        augment_chart(chart)
         determine_outcome(chart)
         chart
       end
@@ -88,6 +95,18 @@ module Dendroid
         end
 
         chart
+      end
+
+      def augment_chart(aChart)
+        top_symbol = aChart.start_symbol
+        start_item = StartItem.new(top_symbol)
+        first_item_set = aChart.item_sets[0]
+        first_item_set.items.each do |entry|
+          if entry.lhs == top_symbol && entry.algo == :predictor
+            entry.predecessors << start_item
+          end
+        end
+        first_item_set.items.unshift(start_item)
       end
 
       def advance_next_token(tokens, predicted_symbols)
@@ -152,8 +171,10 @@ module Dendroid
 
         next_item = grm_analysis.next_item(item.dotted_item)
         return unless next_item
+        empty_item = entry_items.find(&:empty?)
+        empty_entry = add_item(curr_set, empty_item, rank, item, :predictor)
 
-        add_item(curr_set, next_item, item.origin, nil, :predictor)
+        add_item(curr_set, next_item, item.origin, empty_entry, :completer)
       end
 
       # procedure SCANNER((A → α•aβ, j), k, words)
@@ -180,6 +201,8 @@ module Dendroid
       #         ADD_TO_SET((A → αB•β, j), S[k])
       #     end
       def completer(chart, item, rank, tokens, mode)
+        return if item.dotted_item.empty?
+
         origin = item.origin
 
         curr_set = chart[rank]
@@ -214,28 +237,39 @@ module Dendroid
       def add_item(item_set, dotted_item, origin, predecessor, procedure)
         new_item = EItem.new(dotted_item, origin)
         added = item_set.add_item(new_item)
-        added.add_predecessor(predecessor) if predecessor
-        new_item.algo = procedure
+        if predecessor # && !(predecessor == added)
+          added.add_predecessor(predecessor)
+          added.predecessors.uniq! unless added.equal?(new_item)
+        end
+        added.algo = procedure
 
         added
       end
 
       def determine_outcome(chart)
-        success = false
         tokens = chart.tokens
         if chart.size == tokens.size + 1
           top_symbol = grm_analysis.grammar.start_symbol
           top_rule = grm_analysis.grammar.nonterm2production[top_symbol]
           final_items = top_rule.reduce_items
           last_set = chart.item_sets.last
+          successes = []
           last_set.each do |entry|
-            next if !entry.origin.zero? || !final_items.include?(entry.dotted_item)
+            next if !entry.origin.zero? || entry.is_a?(StartItem)|| !final_items.include?(entry.dotted_item)
 
+            successes << entry
+          end
+
+          unless successes.empty?
             success = true
+            success_item = SuccessItem.new(top_symbol)
+            success_item.predecessors.concat(successes)
+            last_set.items << success_item
+            chart.success_entry = success_item
           end
         end
 
-        unless success
+        unless chart.success?
           # Error detected...
           replay_last_set(chart, tokens)
           if chart.size < tokens.size + 1
@@ -260,7 +294,7 @@ module Dendroid
             chart.failure(StandardError, err_msg)
           end
         end
-        chart.success = success
+        chart.success?
       end
 
       def expected_terminals(chart)
